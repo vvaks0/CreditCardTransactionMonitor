@@ -35,11 +35,13 @@ From Ambari Admin
 
  - start Nifi, Hbase, Kafka, Storm
 
-From the NiFi Studio interface (http://sandbox.hortonworks.com:9090/nifi), Import CreditFraudDetectionFlow.xml as a template into Nifi (The template is packaged as part of the .zip)
+From the NiFi Studio interface (http://sandbox.hortonworks.com:9090/nifi), Import CreditFraudDetectionFlow.xml as a template into Nifi (The template is in the NifiFlow floder. Nifi allows you to browse the local machine so it may be easier to download a copy locally directly from git)
 
 Make sure to start all of the processors, should just need to hit the green start button as all of the processors will be selected after import
 
-Make sure that docker is running: service docker status. If not, start it: service docker start
+Make sure that docker is running: service docker status. If not, start it: 
+
+service docker start
 
 Start Application Servers on Slider:
 
