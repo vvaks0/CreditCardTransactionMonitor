@@ -1,5 +1,6 @@
 cd CreditCardTransactionMonitor
-cp CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
+mvn clean package
+cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
 
 #Configure Kafka
 /usr/hdp/current/kafka-broker/bin/kafka-topics.sh --create --zookeeper sandbox.hortonworks.com:2181 --replication-factor 1 --partitions 1 --topic IncomingTransactions
