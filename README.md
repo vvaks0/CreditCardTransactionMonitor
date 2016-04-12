@@ -14,20 +14,29 @@ chmod 755 install.sh
 
 ./install.sh
 
-From Ambari
+From Ambari:
+
  - Increase Yarn memory per container to 5GB (This is important as the default setting of 2GB is not enough to support the application servers on Yarn)
- - Install Nifi using Add Service button
+ 
+- Install Nifi using Add Service button
 Reboot Sandbox
 
 Configure Virtual Box Port Forward
+
 8082 – HDF_HTTP_Ingest
+
 8090 - MapUI
+
 8091 - Cometd
+
 9090 – HDF_Studio
+
 From Ambari Admin 
+
  - start Nifi, Hbase, Kafka, Storm
 
 From the NiFi Studio interface (http://sandbox.hortonworks.com:9090/nifi), Import CreditFraudDetectionFlow.xml as a template into Nifi (The template is packaged as part of the .zip)
+
 Make sure to start all of the processors, should just need to hit the green start button as all of the processors will be selected after import
 
 Make sure that docker is running: service docker status. If not, start it: service docker start
@@ -39,9 +48,11 @@ slider create transactionmonitorui --template /usr/hdp/docker/dockerbuild/transa
 (Slider will download the docker containers from the docker hub so it may take a few minutes for the application server to start)
 
 Deploy Storm Topology:
+
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
 
 Add TransactionHistory aggregate Phoenix View:
+
 usr/hdp/2.3.2.0-2950/phoenix/bin/sqlline.py localhost:2181:/hbase-unsecure
 create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
 
