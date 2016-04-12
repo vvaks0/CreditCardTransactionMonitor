@@ -30,6 +30,7 @@ sudo -u hdfs hadoop fs -chown root:hdfs /user/root/
 mkdir /usr/hdp/docker/
 mkdir /usr/hdp/docker/dockerbuild/
 mkdir /usr/hdp/docker/dockerbuild/transactionmonitorui
+cd ../SliderConfig
 cp -vf appConfig.json /usr/hdp/docker/dockerbuild/transactionmonitorui
 cp -vf metainfo.json /usr/hdp/docker/dockerbuild/transactionmonitorui
 cp -vf resources.json /usr/hdp/docker/dockerbuild/transactionmonitorui
