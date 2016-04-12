@@ -6,9 +6,12 @@ Start Sandbox, SSH to Sandbox, Change sandbox root password From Ambari (http://
 
 Start Kafka (This is important, if Kafka is not started, the install script will not be able to configure the required Kafka Topics)
 ssh to sandbox as root into /root directory
-git clone git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git (make sure that git cloned to /CreditCardTransactionMonitor) 
+git clone git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git (make sure that git cloned to /CreditCardTransactionMonitor)
+
 cd DeviceManagerDemo 
+
 chmod 755 install.sh 
+
 ./install.sh
 
 From Ambari
