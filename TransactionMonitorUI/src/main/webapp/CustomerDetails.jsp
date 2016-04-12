@@ -147,6 +147,18 @@ div#customer_container{
 	background-color: #9CF;
 }
 
+.fraud_table_header {
+	font-family: arial;
+	margin-right: 2px;
+	margin-left: 2px;
+	margin-top: 2px;
+	border-top: solid 1px #333;
+	border-bottom: solid 1px #333;
+	border-left: solid 1px #333;
+	border-right: solid 1px #333;
+	background-color: #ED5C98;
+}
+
 .summary_table{
 	font-family: arial;
 	font-size: 15px;
@@ -215,7 +227,7 @@ div#customer_container{
   				console.log(message)
   				var fraudulent = message.data.fraudulent;
   				if(fraudulent=="true"){
-  					document.getElementById("account_container").style.backgroundColor = "#FF0000";
+  					document.getElementById("account_container").style.backgroundColor = "#ED5C98";
   					document.getElementById("accountStatus").innerHTML = "Suspended";
   				}else{
   					document.getElementById("account_container").style.backgroundColor = "#9CF";
@@ -289,6 +301,7 @@ div#customer_container{
       
       function drawTable() {
     	var cssClassNames = {headerRow: 'transaction_table_header'};
+    	var cssFraudClassNames = {headerRow: 'fraud_table_header'};
     	legitTableData = new google.visualization.DataTable();
         legitTableData.addColumn('string', 'TransactionId');
         legitTableData.addColumn('string', 'MerchantType');
@@ -326,7 +339,7 @@ div#customer_container{
         
         fraudTable = new google.visualization.Table(document.getElementById('fraudTransaction_table'));
         google.visualization.events.addListener(fraudTable, 'select', fraudTableSelectHandler);        
-        fraudTable.draw(fraudTableData, {showRowNumber: false, width: '100%', height: '100%', cssClassNames});
+        fraudTable.draw(fraudTableData, {showRowNumber: false, width: '100%', height: '100%', cssFraudClassNames});
       }
       
       function drawChart() {
