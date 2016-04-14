@@ -3,7 +3,11 @@ Credit Card Transaction Monitor is an example of a Modern Data Application runni
 
 Download and Import Hortonworks Sandbox 2.3.2 (should work with Sandbox 2.4 but has not been tested) for Virtual Box. Should work with VMWare but has not been tested. Modify local hosts file so that sandbox.hortonworks.com resolves to 127.0.0.1 (This is important and may break the simulator and UI) Start Sandbox, SSH to Sandbox, Change sandbox root password From Ambari (http://sandbox.hortonworks.com:8080)
 
-Start Kafka (This is important, if Kafka is not started, the install script will not be able to configure the required Kafka Topics) ssh to sandbox as root into /root directory git clone git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git (make sure that git cloned to /CreditCardTransactionMonitor)
+Start Kafka (This is important, if Kafka is not started, the install script will not be able to configure the required Kafka Topics) ssh to sandbox as root into /root directory 
+
+git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git 
+
+(make sure that git cloned to /CreditCardTransactionMonitor)
 
 cd DeviceManagerDemo
 
