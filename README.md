@@ -18,6 +18,7 @@ chmod 755 install.sh
 From Ambari:
 
 Increase Yarn memory per container to 5GB (This is important as the default setting of 2GB is not enough to support the application servers on Yarn)
+
 Install Nifi using Add Service button Reboot Sandbox
 Configure Virtual Box Port Forward
 
@@ -59,6 +60,14 @@ storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.horton
 Add TransactionHistory aggregate Phoenix View:
 
 usr/hdp/2.3.2.0-2950/phoenix/bin/sqlline.py localhost:2181:/hbase-unsecure create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
+
+Build Simulator inside of Sandbox
+
+cd /root/DeviceManagerDemo/DeviceSimulator
+
+mvn clean package
+
+scp target/DeviceSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar to the local machine
 
 Start Simulation on Host (Not inside VM): USAGE:
 
