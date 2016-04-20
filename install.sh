@@ -1,5 +1,4 @@
 #!/bin/bash
-
 wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
 sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
 yum install -y apache-maven
@@ -95,16 +94,13 @@ sudo -u hdfs hadoop fs -mkdir /user/root/
 sudo -u hdfs hadoop fs -chown root:hdfs /user/root/
 
 #Create Docker working folder
-mkdir /usr/hdp/docker/
-mkdir /usr/hdp/docker/dockerbuild/
-mkdir /usr/hdp/docker/dockerbuild/transactionmonitorui
+mkdir /home/docker/
+mkdir /home/docker/dockerbuild/
+mkdir /home/docker/dockerbuild/transactionmonitorui
 cd ../SliderConfig
-cp -vf appConfig.json /usr/hdp/docker/dockerbuild/transactionmonitorui
-cp -vf metainfo.json /usr/hdp/docker/dockerbuild/transactionmonitorui
-cp -vf resources.json /usr/hdp/docker/dockerbuild/transactionmonitorui
-
-slider create transactionmonitorui --template /usr/hdp/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /usr/hdp/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /usr/hdp/docker/dockerbuild/transactionmonitorui/resources.json
-sleep 5
+cp -vf appConfig.json /home/docker/dockerbuild/transactionmonitorui
+cp -vf metainfo.json /home/docker/dockerbuild/transactionmonitorui
+cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
 
 STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
 
@@ -137,6 +133,9 @@ else
 fi
 
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
+
+#slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
+#sleep 5
 
 #Install NiFi Service in Ambari. Still need to log into Ambari and install the service from the console
 #VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
