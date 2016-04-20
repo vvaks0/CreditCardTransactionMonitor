@@ -58,6 +58,7 @@ slider create transactionmonitorui --template /home/docker/dockerbuild/transacti
 Add TransactionHistory aggregate Phoenix View:
 
 /usr/hdp/current/phoenix-client/bin/sqlline.py sandbox.hortonworks.com:2181:/hbase-unsecure
+
 create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
 
 Start Simulation on Host (Not inside VM):
