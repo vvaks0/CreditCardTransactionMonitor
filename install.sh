@@ -1,8 +1,107 @@
 #!/bin/bash
+
+echo "Creating NIFI service..."
+# Create NIFI service
+curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI
+
+sleep 2
+echo "Adding NIFI MASTER component..."
+# Add NIFI Master component to service
+curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI/components/NIFI_MASTER
+
+sleep 2
+echo "Creating NIFI configuration..."
+# Create and apply configuration
+/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
+sleep 2
+/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
+sleep 2
+/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-flow-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-flow-env.json
+sleep 2
+/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-logback-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-logback-env.json
+sleep 2
+/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-properties-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-properties-env.json
+
+sleep 2
+echo "Adding NIFI MASTER role to Host..."
+# Add NIFI Master role to Sandbox host
+curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/hosts/sandbox.hortonworks.com/host_components/NIFI_MASTER
+
+sleep 2
+echo "Installing NIFI Service"
+# Install NIFI Service
+TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+
+echo "AMBARI TaskID " $TASKID
+sleep 2
+
+LOOPESCAPE="false"
+
+until [ "$LOOPESCAPE" == true ]; do
+
+        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+        if [ "$TASKSTATUS" == COMPLETED ]; then
+                LOOPESCAPE="true"
+        fi
+
+        echo "Task Status" $TASKSTATUS
+        sleep 2
+done
+echo "NIFI Service Installed..."
+
+sleep 2
+echo "Starting NIFI Service..."
+# Start NIFI service
+TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+
+echo "AMBARI TaskID " $TASKID
+sleep 2
+
+LOOPESCAPE="false"
+
+until [ "$LOOPESCAPE" == true ]; do
+
+        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+        if [ "$TASKSTATUS" == COMPLETED ]; then
+                LOOPESCAPE="true"
+        fi
+
+        echo "Task Status" $TASKSTATUS
+        sleep 2
+done
+echo "NIFI Service Started..."
+
+LOOPESCAPE="false"
+until [ "$LOOPESCAPE" == true ]; do
+
+        TASKSTATUS=$(curl -u admin:admin -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller | grep -Po 'OK')
+        if [ "$TASKSTATUS" == OK ]; then
+                LOOPESCAPE="true"
+        else
+                TASKSTATUS="PENDING"
+        fi
+
+        echo "NIFI Servlet Status... " $TASKSTATUS
+        sleep 2
+done
+
+echo "Importing NIFI Template..."
+# Import NIFI Template
+TEMPLATEID=$(curl -v -F template=@"/root/CreditCardTransactionMonitor/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://sandbox.hortonworks.com:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+sleep 2
+echo "Instantiating NIFI Flow..."
+# Instantiate NIFI Template
+REVISION=$(curl -u admin:admin  -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
+curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "templateId=$TEMPLATEID&originX=100&originY=100&version=$REVISION" -X POST http://sandbox.hortonworks.com:9090/nifi-api/controller/process-groups/root/template-instance
+
+echo "Installing Maven"
+# Install Maven
 wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
 sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
 yum install -y apache-maven
 
+echo "Building Credit Card Transaction Monitor Storm Topology"
+# Build from source
 cd CreditCardTransactionMonitor
 mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm

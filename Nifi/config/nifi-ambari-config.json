@@ -1,0 +1,8 @@
+"properties" : {
+"nifi.ambari_reporting_frequency" : "1 mins",
+"nifi.initial_mem" : "512m",
+"nifi.install_dir" : "/opt",
+"nifi.max_mem" : "512m",
+"nifi.port" : "9090",
+"nifi.setup_prebuilt" : "true"
+}
