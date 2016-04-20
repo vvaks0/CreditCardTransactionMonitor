@@ -51,7 +51,7 @@ service docker start
 
 Start Application Servers on Slider:
 
-slider create transactionmonitorui --template /usr/hdp/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /usr/hdp/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /usr/hdp/docker/dockerbuild/transactionmonitorui/resources.json 
+slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json 
 
 (Slider will download the docker containers from the docker hub so it may take a few minutes for the application server to start)
 
