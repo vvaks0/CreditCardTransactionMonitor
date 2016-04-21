@@ -52,7 +52,7 @@ echo "NIFI Service Installed..."
 sleep 2
 echo "Starting NIFI Service..."
 # Start NIFI service
-TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start NIFI"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
 
 echo "AMBARI TaskID " $TASKID
 sleep 2
@@ -107,7 +107,6 @@ mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
 
 #Start Kafka
-
 KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')
 
 if [ "$KAFKASTATUS" == INSTALLED ]; then
@@ -204,7 +203,7 @@ cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
 STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
 
 if [ "$STORMSTATUS" == INSTALLED ]; then
-	echo "Starting Storm Broker..."
+	echo "Starting Storm Service..."
 	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Storm via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep "id" | grep -Po '([0-9]+)')
 	echo "STORM TaskId " $TASKID
 	sleep 2
@@ -225,9 +224,9 @@ if [ "$STORMSTATUS" == INSTALLED ]; then
 	echo "Storm Broker Started..."
 
 elif [ "$STORMSTATUS" == STARTED ]; then
-	echo "Storm Broker Started..."
+	echo "Storm Service Started..."
 else
-	echo "Storm Broker in a transition state. Wait for process to complete and then run the install script again."
+	echo "Storm Service in a transition state. Wait for process to complete and then run the install script again."
 	exit 1
 fi
 
@@ -243,7 +242,6 @@ for ((i = 0; i != length; i++)); do
    curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "state=RUNNING&version=$REVISION" -X PUT ${TARGETS[i]}
    REVISION=$(curl -u admin:admin  -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
 done
-
 
 # Deploy Storm Topology
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology

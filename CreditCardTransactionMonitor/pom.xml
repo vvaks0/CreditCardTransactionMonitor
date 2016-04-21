@@ -145,6 +145,11 @@
 		<artifactId>cometd-java-client</artifactId>
 		<version>3.0.7</version>
 	</dependency>
+	<dependency>
+		<groupId>org.apache.phoenix</groupId>
+		<artifactId>phoenix-core</artifactId>
+		<version>4.4.0-HBase-1.1</version>
+	</dependency>
   </dependencies>
   <build>
   <plugins>

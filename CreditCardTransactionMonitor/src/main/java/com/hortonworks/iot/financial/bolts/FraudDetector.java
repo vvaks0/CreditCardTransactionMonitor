@@ -1,6 +1,10 @@
 package com.hortonworks.iot.financial.bolts;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -205,6 +209,17 @@ public class FraudDetector extends BaseRichBolt {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		Connection conn;
+        try {
+			Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+			conn =  DriverManager.getConnection("jdbc:phoenix:sandbox.hortonworks.com:2181:/hbase-unsecure");
+			conn.createStatement().executeQuery("CREATE VIEW \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, \"Transactions\".\"merchantType\" VARCHAR, \"Transactions\".\"frauduent\" VARCHAR");
+        } catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}        
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
