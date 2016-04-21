@@ -15,17 +15,13 @@ git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git (make s
 
 cd /root/CreditCardTransactionMonitor
 
-chmod 755 install.sh 
-
 ./install.sh
 
-From Ambari:
+Once Install Completes, From Ambari:
 
 - Increase Yarn memory per container to 6GB (This is important as the default setting of 2GB is not enough to support the application servers on Yarn) 
 
-- Install Nifi using Add Service button
-
-Reboot Sandbox
+Reboot Sandbox (reboot now)
 
 Configure Virtual Box Port Forward
 
@@ -37,31 +33,21 @@ Configure Virtual Box Port Forward
 
 9090 – HDF_Studio
 
-From Ambari Admin 
+cd /root/CreditCardTransactionMonitor
+./startDemoServices.sh
 
- - start Nifi, Hbase, Kafka, Storm
+Slider will download the servlet (UI) docker containers from the docker hub so it may take a few minutes for the application server to start
 
-From the NiFi Studio interface (http://sandbox.hortonworks.com:9090/nifi), Import CreditFraudDetectionFlow.xml as a template into Nifi (The template is in the NifiFlow floder. Nifi allows you to browse the local machine so it may be easier to download a copy locally directly from git)
+From the browser: http://sandbox.hortonworks.com:8090/TransactionMonitorUI/CustomerOverview
 
-Make sure to start all of the processors, should just need to hit the green start button as all of the processors will be selected after import
+cd /root/CreditCardTransactionMonitor/CreditCardTransactionSimulator
 
-Make sure that docker is running: service docker status. If not, start it: 
+mvn clean package
 
-service docker start
-
-Start Application Servers on Slider:
-
-slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json 
-
-(Slider will download the docker containers from the docker hub so it may take a few minutes for the application server to start)
-
-Add TransactionHistory aggregate Phoenix View:
-
-/usr/hdp/current/phoenix-client/bin/sqlline.py sandbox.hortonworks.com:2181:/hbase-unsecure
-
-create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
+Copy the resulting jar to the host machine
 
 Start Simulation on Host (Not inside VM):
+
 USAGE:
 
 java -jar simulator.jar arg1=Simulator-Type{Customer} arg2=EntityId{1000} arg3={Simulation|Training}
