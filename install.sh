@@ -6,7 +6,7 @@ sleep 2
 
 sleep 2
 echo "Restarting YARN..."
-TASKID=$(curl -u admin:admin -H "X-Requested-By: ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop YARN"}, "ServiceInfo": {"state": "INSTALLED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
+TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop YARN"}, "ServiceInfo": {"state": "INSTALLED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
 echo "AMBARI TaskID " $TASKID
 sleep 2
 LOOPESCAPE="false"
@@ -19,7 +19,7 @@ until [ "$LOOPESCAPE" == true ]; do
         sleep 2
 done
 
-TASKID=$(curl -u admin:admin -H "X-Requested-By: ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start YARN"}, "ServiceInfo": {"state": "STARTED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
+TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start YARN"}, "ServiceInfo": {"state": "STARTED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
 echo "AMBARI TaskID " $TASKID
 sleep 2
 LOOPESCAPE="false"
@@ -44,6 +44,7 @@ curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonw
 sleep 2
 echo "Creating NIFI configuration..."
 # Create and apply configuration
+VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
 /var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
 sleep 2
 /var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
@@ -108,7 +109,8 @@ done
 
 echo "Importing NIFI Template..."
 # Import NIFI Template
-TEMPLATEID=$(curl -v -F template=@"/root/CreditCardTransactionMonitor/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://sandbox.hortonworks.com:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+#TEMPLATEID=$(curl -v -F template=@"/root/CreditCardTransactionMonitor/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://sandbox.hortonworks.com:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+TEMPLATEID=$(curl -v -F template=@"Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://sandbox.hortonworks.com:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
 sleep 2
 echo "Instantiating NIFI Flow..."
 # Instantiate NIFI Template
@@ -126,6 +128,12 @@ echo "Building Credit Card Transaction Monitor Storm Topology"
 cd CreditCardTransactionMonitor
 mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
+
+echo "Building Credit Card Transaction Simulator"
+# Build from source
+cd ../CreditCardTransactionSimulator
+mvn clean package
+cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar ../
 
 #Start Kafka
 KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')
