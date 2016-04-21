@@ -1,4 +1,36 @@
 #!/bin/bash
+echo "Changing YARN Container Memory Size..."
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox yarn-site "yarn.scheduler.maximum-allocation-mb" "6144"
+sleep 2
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox yarn-site "yarn.nodemanager.resource.memory-mb" "6144"
+
+sleep 2
+echo "Restarting YARN..."
+TASKID=$(curl -u admin:admin -H "X-Requested-By: ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop YARN"}, "ServiceInfo": {"state": "INSTALLED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
+echo "AMBARI TaskID " $TASKID
+sleep 2
+LOOPESCAPE="false"
+until [ "$LOOPESCAPE" == true ]; do
+        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+        if [ "$TASKSTATUS" == COMPLETED ]; then
+                LOOPESCAPE="true"
+        fi
+        echo "Task Status" $TASKSTATUS
+        sleep 2
+done
+
+TASKID=$(curl -u admin:admin -H "X-Requested-By: ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start YARN"}, "ServiceInfo": {"state": "STARTED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
+echo "AMBARI TaskID " $TASKID
+sleep 2
+LOOPESCAPE="false"
+until [ "$LOOPESCAPE" == true ]; do
+        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+        if [ "$TASKSTATUS" == COMPLETED ]; then
+                LOOPESCAPE="true"
+        fi
+        echo "Task Status" $TASKSTATUS
+        sleep 2
+done
 
 echo "Creating NIFI service..."
 # Create NIFI service
@@ -12,15 +44,15 @@ curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonw
 sleep 2
 echo "Creating NIFI configuration..."
 # Create and apply configuration
-/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-flow-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-flow-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-flow-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-flow-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-logback-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-logback-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-logback-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-logback-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set localhost Sandbox nifi-properties-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-properties-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-properties-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-properties-env.json
 
 sleep 2
 echo "Adding NIFI MASTER role to Host..."
@@ -31,19 +63,14 @@ sleep 2
 echo "Installing NIFI Service"
 # Install NIFI Service
 TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-
 echo "AMBARI TaskID " $TASKID
 sleep 2
-
 LOOPESCAPE="false"
-
 until [ "$LOOPESCAPE" == true ]; do
-
         TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
         if [ "$TASKSTATUS" == COMPLETED ]; then
                 LOOPESCAPE="true"
         fi
-
         echo "Task Status" $TASKSTATUS
         sleep 2
 done
@@ -53,24 +80,18 @@ sleep 2
 echo "Starting NIFI Service..."
 # Start NIFI service
 TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start NIFI"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-
 echo "AMBARI TaskID " $TASKID
 sleep 2
-
 LOOPESCAPE="false"
-
 until [ "$LOOPESCAPE" == true ]; do
-
         TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
         if [ "$TASKSTATUS" == COMPLETED ]; then
                 LOOPESCAPE="true"
         fi
-
         echo "Task Status" $TASKSTATUS
         sleep 2
 done
 echo "NIFI Service Started..."
-
 LOOPESCAPE="false"
 until [ "$LOOPESCAPE" == true ]; do
 
@@ -80,7 +101,7 @@ until [ "$LOOPESCAPE" == true ]; do
         else
                 TASKSTATUS="PENDING"
         fi
-
+		echo "Waiting for NIFI Servlet..."
         echo "NIFI Servlet Status... " $TASKSTATUS
         sleep 2
 done
@@ -114,22 +135,16 @@ if [ "$KAFKASTATUS" == INSTALLED ]; then
 	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Kafka via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/KAFKA | grep "id" | grep -Po '([0-9]+)')
 	echo "AMBARI TaskID " $TASKID
 	sleep 2
-
 	LOOPESCAPE="false"
-
 	until [ "$LOOPESCAPE" == true ]; do
-
 		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
-		
 		echo "Task Status" $TASKSTATUS
 		sleep 2
-
 	done
 	echo "Kafka Broker Started..."
-
 elif [ "$KAFKASTATUS" == STARTED ]; then
 	echo "Kafka Broker Started..."
 else
@@ -143,27 +158,21 @@ fi
 
 #Start HBASE
 HBASESTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/HBASE | grep '"state" :' | grep -Po '([A-Z]+)')
-
 if [ "$HBASESTATUS" == INSTALLED ]; then
 	echo "Starting  Hbase Service..."
 	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Hbase via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/HBASE | grep "id" | grep -Po '([0-9]+)')
 	echo "HBASE TaskId " $TASKID
 	sleep 2
-
 	LOOPESCAPE="false"
-
 	until [ "$LOOPESCAPE" == true ]; do
-
 		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
-
 		echo "Task Status" $TASKSTATUS
 		sleep 2
 	done
 	echo "Hbase Service Started..."
-
 elif [ "$HBASESTATUS" == STARTED ]; then
 	echo "Hbase Service  Started..."
 else
@@ -201,28 +210,21 @@ cp -vf metainfo.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
 
 STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
-
 if [ "$STORMSTATUS" == INSTALLED ]; then
 	echo "Starting Storm Service..."
 	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Storm via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep "id" | grep -Po '([0-9]+)')
 	echo "STORM TaskId " $TASKID
 	sleep 2
-
 	LOOPESCAPE="false"
-
 	until [ "$LOOPESCAPE" == true ]; do
-
 		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
-		
 		echo "Task Status" $TASKSTATUS
 		sleep 2
-
 	done
 	echo "Storm Broker Started..."
-
 elif [ "$STORMSTATUS" == STARTED ]; then
 	echo "Storm Service Started..."
 else
@@ -234,7 +236,6 @@ fi
 echo "Starting NIFI Flow..."
 REVISION=$(curl -u admin:admin  -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
 TARGETS=($(curl -u admin:admin -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
-
 length=${#TARGETS[@]}
 for ((i = 0; i != length; i++)); do
    echo curl -u admin:admin -i -X GET ${TARGETS[i]}
