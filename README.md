@@ -18,8 +18,10 @@ Start Sandbox, SSH to Sandbox (ssh root@sandbox.hortonworks.com -p 2222)
 
 Change sandbox root password (passwd)
 
-Change Ambari password to "admin" (ambari-admin-password-reset) 
+Change Ambari password to "admin" (ambari-admin-password-reset)
+ 
 (!!!!!!!!!!!!!AMBARI PASSWORD MUST BE SET TO "admin" (no quotes)!!!!!!)
+
 (!!!!!!!!!!!!!INSTALL WILL NOT WORK WITH ANOTHER PASSWORD!!!!!!!!!!!!!)
 
 cd /root (use the /root directory to begin the install)
