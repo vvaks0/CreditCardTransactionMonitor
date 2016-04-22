@@ -38,13 +38,13 @@ sleep 2
 
 # Ensure that Yarn is not in a transitional state
 YARNSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
+sleep 2
 echo "YARN STATUS: $YARNSTATUS"
+LOOPESCAPE="false"
 if ! [[ "$YARNSTATUS" == STARTED || "$YARNSTATUS" == INSTALLED ]]; then
-        sleep 2
-        LOOPESCAPE="false"
         until [ "$LOOPESCAPE" == true ]; do
                 YARNSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
-                if ! [[ "$TASKSTATUS" == STARTED || "$TASKSTATUS" == INSTALLED ]]; then
+                if [[ "$TASKSTATUS" == STARTED || "$TASKSTATUS" == INSTALLED ]]; then
                         LOOPESCAPE="true"
                 fi
                 sleep 2
