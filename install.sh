@@ -7,7 +7,8 @@ if [ "$INTVERSION" -lt 24 ]; then
 	sudo git clone https://github.com/abajwa-hw/ambari-nifi-service.git   /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
 	service ambari restart
 else
-	echo "*********************************NO ACTION REQUIRED" 
+	echo "*********************************Install Zeppelin Notebook"
+	cp -rvf Zeppelin/notebook/* /usr/hdp/current/zeppelin-server/lib/notebook/  
 fi
 
 # Wait for Ambari

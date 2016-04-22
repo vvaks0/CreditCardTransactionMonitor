@@ -1,0 +1,224 @@
+{
+  "paragraphs": [
+    {
+      "text": "%dep\nz.reset()\nz.addRepo(\"Spark Packages Repo\").url(\"http://dl.bintray.com/spark-packages/maven\")\nz.load(\"com.databricks:spark-csv_2.10:1.2.0\")",
+      "dateUpdated": "Apr 22, 2016 1:19:45 PM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "enabled": true,
+        "editorMode": "ace/mode/scala",
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1461330297394_-1548744074",
+      "id": "20160422-130457_1340400363",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "res0: org.apache.zeppelin.dep.Dependency \u003d org.apache.zeppelin.dep.Dependency@41737814\n"
+      },
+      "dateCreated": "Apr 22, 2016 1:04:57 PM",
+      "dateStarted": "Apr 22, 2016 1:19:45 PM",
+      "dateFinished": "Apr 22, 2016 1:20:03 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "import org.apache.spark.sql.Row\nimport org.apache.spark.mllib.regression.LabeledPoint\nimport org.apache.spark.mllib.linalg.{Vector, Vectors}\nimport org.apache.spark.ml.classification.ProbabilisticClassifier\nimport org.apache.spark.ml.classification.LogisticRegression\n//import org.apache.spark.mllib.classification.{LogisticRegressionWithLBFGS, LogisticRegressionModel}\nimport org.apache.spark.mllib.evaluation.MulticlassMetrics\nimport org.apache.spark.mllib.regression.LabeledPoint\nimport org.apache.spark.mllib.linalg.Vectors\nimport org.apache.spark.mllib.util.MLUtils\n\n// Load training data\nval data \u003d sqlContext.read.format(\"com.databricks.spark.csv\").option(\"header\", \"true\").load(\"/user/zeppelin/training5.csv\")\ndata.dtypes\ndata.show\n\nval row \u003d data.map(x\u003d\u003e Tuple4( x.getString(0).toDouble, x.getString(2).toDouble, x.getString(3).toDouble, x.getString(4).toDouble))\nrow.toDF.registerTempTable(\"row\")\n\n\n// create feature vector\nval df \u003d data.map { x\u003d\u003e \n  LabeledPoint( x.getString(0).toDouble,\n    Vectors.dense( x.getString(2).toDouble, x.getString(3).toDouble, x.getString(4).toDouble ))\n}.toDF\n\ndf.show\n\n\n// Split the data into train and test\nval splits \u003d df.randomSplit(Array(7.0, 3.0), seed \u003d 1234L)\nval (train, test) \u003d (splits(0), splits(1))\n\n//train.count\n//test.count\n\n// create model\nval trainer \u003d new LogisticRegression()\n  .setMaxIter(700)\n  .setRegParam(0.1)\n  .setElasticNetParam(0.8)\n // .setNumClasses(10)\n //.run(train)\n \nmodel.save(\"/user/zeppelin/ccModel6\") \n// train/fit the model\nval model \u003d trainer.fit(df)\n\n// compute/predict precision on the test set\nval result \u003d model.transform(df) // test\nval predictionAndLabels \u003d result.select(\"prediction\", \"label\")\nval evaluator \u003d new org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator()\n  .setMetricName(\"precision\")\nprintln(\"Precision:\" + evaluator.evaluate(predictionAndLabels))\n\n\n//import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}\n\n// Extract the summary from the returned LogisticRegressionModel instance trained in the earlier\n// example\nval trainingSummary \u003d model.summary\n\n// Obtain the objective per iteration.\nval objectiveHistory \u003d trainingSummary.objectiveHistory\nobjectiveHistory.foreach(loss \u003d\u003e println(loss))",
+      "dateUpdated": "Apr 22, 2016 1:39:08 PM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1461330335791_168637099",
+      "id": "20160422-130535_1047679357",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "import org.apache.spark.sql.Row\nimport org.apache.spark.mllib.regression.LabeledPoint\nimport org.apache.spark.mllib.linalg.{Vector, Vectors}\nimport org.apache.spark.ml.classification.ProbabilisticClassifier\nimport org.apache.spark.ml.classification.LogisticRegression\nimport org.apache.spark.mllib.evaluation.MulticlassMetrics\nimport org.apache.spark.mllib.regression.LabeledPoint\nimport org.apache.spark.mllib.linalg.Vectors\nimport org.apache.spark.mllib.util.MLUtils\ndata: org.apache.spark.sql.DataFrame \u003d [0: string, 19123: string, 0.85: string, 2.05: string, 0.78: string]\nres65: Array[(String, String)] \u003d Array((0,StringType), (19123,StringType), (0.85,StringType), (2.05,StringType), (0.78,StringType))\n+---+-----+-----+-----+-----+\n|  0|19123| 0.85| 2.05| 0.78|\n+---+-----+-----+-----+-----+\n|  0|19123| 0.96| 2.05| 0.78|\n|  0|19123| 1.09| 2.05| 0.78|\n|  0|19123| 0.21| 2.05| 0.78|\n|  0|19123| 0.39| 2.05| 1.30|\n|  0|19123| 0.08| 2.44| 0.24|\n|  1|19123|12.00| 2.00| 3.00|\n|  1|19123| 2.10|22.40| 3.10|\n|  1|19123| 8.00| 6.50| 9.70|\n|  0|19123| 0.73| 2.23| 0.43|\n|  0|19123| 0.77| 2.23| 1.30|\n|  0|19123| 1.65| 2.05| 0.51|\n|  0|19123| 0.79| 2.05| 0.51|\n|  0|19123| 0.61| 2.05| 1.54|\n|  0|19123| 0.03| 2.05| 1.30|\n|  0|19123| 1.43| 2.05| 1.54|\n|  0|19123| 1.37| 2.05| 1.26|\n|  1|19123| 1.80|15.60| 0.80|\n|  1|19123| 0.30| 2.04|17.50|\n|  0|19123| 1.61| 2.05| 0.74|\n|  0|19123| 1.31| 2.05| 1.30|\n+---+-----+-----+-----+-----+\nonly showing top 20 rows\n\nrow: org.apache.spark.rdd.RDD[(Double, Double, Double, Double)] \u003d MapPartitionsRDD[91] at map at \u003cconsole\u003e:62\ndf: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector]\n+-----+----------------+\n|label|        features|\n+-----+----------------+\n|  0.0|[0.96,2.05,0.78]|\n|  0.0|[1.09,2.05,0.78]|\n|  0.0|[0.21,2.05,0.78]|\n|  0.0| [0.39,2.05,1.3]|\n|  0.0|[0.08,2.44,0.24]|\n|  1.0|  [12.0,2.0,3.0]|\n|  1.0|  [2.1,22.4,3.1]|\n|  1.0|   [8.0,6.5,9.7]|\n|  0.0|[0.73,2.23,0.43]|\n|  0.0| [0.77,2.23,1.3]|\n|  0.0|[1.65,2.05,0.51]|\n|  0.0|[0.79,2.05,0.51]|\n|  0.0|[0.61,2.05,1.54]|\n|  0.0| [0.03,2.05,1.3]|\n|  0.0|[1.43,2.05,1.54]|\n|  0.0|[1.37,2.05,1.26]|\n|  1.0|  [1.8,15.6,0.8]|\n|  1.0| [0.3,2.04,17.5]|\n|  0.0|[1.61,2.05,0.74]|\n|  0.0| [1.31,2.05,1.3]|\n+-----+----------------+\nonly showing top 20 rows\n\nsplits: Array[org.apache.spark.sql.DataFrame] \u003d Array([label: double, features: vector], [label: double, features: vector])\ntrain: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector]\ntest: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector]\ntrainer: org.apache.spark.ml.classification.LogisticRegression \u003d logreg_8e5fd92b911d\nmodel: org.apache.spark.ml.classification.LogisticRegressionModel \u003d logreg_8e5fd92b911d\nresult: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector, rawPrediction: vector, probability: vector, prediction: double]\npredictionAndLabels: org.apache.spark.sql.DataFrame \u003d [prediction: double, label: double]\nevaluator: org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator \u003d mcEval_1b3b3c4db3e2\nPrecision:0.9344262295081968\ntrainingSummary: org.apache.spark.ml.classification.LogisticRegressionTrainingSummary \u003d org.apache.spark.ml.classification.BinaryLogisticRegressionTrainingSummary@4b04c320\nobjectiveHistory: Array[Double] \u003d Array(0.6865484015656654, 0.6663715008459105, 0.5886788746527755, 0.5595920451768127, 0.5282477612702495, 0.5244334554841787, 0.5222262542601227, 0.521918626255508, 0.5218057989584386, 0.5217723373560046, 0.5217581413988339, 0.5217547730056313, 0.5217547474303053, 0.5217547468234978, 0.5217547466779449, 0.5217547466758655)\n0.6865484015656654\n0.6663715008459105\n0.5886788746527755\n0.5595920451768127\n0.5282477612702495\n0.5244334554841787\n0.5222262542601227\n0.521918626255508\n0.5218057989584386\n0.5217723373560046\n0.5217581413988339\n0.5217547730056313\n0.5217547474303053\n0.5217547468234978\n0.5217547466779449\n0.5217547466758655\n"
+      },
+      "dateCreated": "Apr 22, 2016 1:05:35 PM",
+      "dateStarted": "Apr 22, 2016 1:39:08 PM",
+      "dateFinished": "Apr 22, 2016 1:39:43 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "val model \u003d  org.apache.spark.ml.classification.LogisticRegressionModel.load( \"/user/zeppelin/ccModel6\")\n\nprintln(s\"Weights: ${model.weights} Intercept: ${model.intercept} ${model.coefficients}\")\n\n//model.summary\n\n//val trainingSummary \u003d model.summary\n\n// Obtain the objective per iteration.\nval objectiveHistory \u003d trainingSummary.objectiveHistory\nobjectiveHistory.foreach(loss \u003d\u003e println(loss))\n\n//val tran \u003d sqlc.createDataFrame(Seq((1.0, Vectors.dense( 1.8, 15.6, 0.8)))).toDF(\"label\", \"features\")\n    \nval tran \u003d Seq(LabeledPoint(1.0, Vectors.dense(5.9,7.55,2.3) )).toDF\n\nval prediction \u003d model.transform(tran)\n\nprediction.select(\"label\", \"prediction\",\"features\", \"probability\").show(3)    \nprediction.select(\"label\", \"prediction\",\"features\", \"probability\", \"rawPrediction\").collect.foreach(println)",
+      "dateUpdated": "Apr 22, 2016 1:39:51 PM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "enabled": true,
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1461330359831_-2054411398",
+      "id": "20160422-130559_1499050426",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "model: org.apache.spark.ml.classification.LogisticRegressionModel \u003d logreg_e57bf02ca8e9\nwarning: there were 1 deprecation warning(s); re-run with -deprecation for details\nWeights: [0.17594049181422217,0.07328660977571064,0.11353057048178225] Intercept: -1.607803165168631 [0.17594049181422217,0.07328660977571064,0.11353057048178225]\nobjectiveHistory: Array[Double] \u003d Array(0.6865484015656654, 0.6663715008459105, 0.5886788746527755, 0.5595920451768127, 0.5282477612702495, 0.5244334554841787, 0.5222262542601227, 0.521918626255508, 0.5218057989584386, 0.5217723373560046, 0.5217581413988339, 0.5217547730056313, 0.5217547474303053, 0.5217547468234978, 0.5217547466779449, 0.5217547466758655)\n0.6865484015656654\n0.6663715008459105\n0.5886788746527755\n0.5595920451768127\n0.5282477612702495\n0.5244334554841787\n0.5222262542601227\n0.521918626255508\n0.5218057989584386\n0.5217723373560046\n0.5217581413988339\n0.5217547730056313\n0.5217547474303053\n0.5217547468234978\n0.5217547466779449\n0.5217547466758655\ntran: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector]\nprediction: org.apache.spark.sql.DataFrame \u003d [label: double, features: vector, rawPrediction: vector, probability: vector, prediction: double]\n+-----+----------+--------------+--------------------+\n|label|prediction|      features|         probability|\n+-----+----------+--------------+--------------------+\n|  1.0|       1.0|[5.9,7.55,2.3]|[0.43913337433167...|\n+-----+----------+--------------+--------------------+\n\n[1.0,1.0,[5.9,7.55,2.3],[0.43913337433167204,0.560866625668328],[-0.2446799524499943,0.2446799524499943]]\n"
+      },
+      "dateCreated": "Apr 22, 2016 1:05:59 PM",
+      "dateStarted": "Apr 22, 2016 1:39:53 PM",
+      "dateFinished": "Apr 22, 2016 1:40:11 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql\nselect * from row",
+      "dateUpdated": "Apr 22, 2016 1:44:06 PM",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "stackedAreaChart",
+          "height": 300.0,
+          "optionOpen": true,
+          "keys": [
+            {
+              "name": "_1",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_2",
+              "index": 1.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_3",
+              "index": 2.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_4",
+              "index": 3.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [
+            {
+              "name": "_1",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_2",
+              "index": 1.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_3",
+              "index": 2.0,
+              "aggr": "sum"
+            },
+            {
+              "name": "_4",
+              "index": 3.0,
+              "aggr": "sum"
+            }
+          ],
+          "groups": [],
+          "scatter": {
+            "xAxis": {
+              "name": "_1",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            "yAxis": {
+              "name": "_2",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          }
+        },
+        "enabled": true,
+        "editorMode": "ace/mode/sql"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1461331651544_-1543808045",
+      "id": "20160422-132731_193522292",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TABLE",
+        "msg": "_1\t_2\t_3\t_4\n0.0\t0.96\t2.05\t0.78\n0.0\t1.09\t2.05\t0.78\n0.0\t0.21\t2.05\t0.78\n0.0\t0.39\t2.05\t1.3\n0.0\t0.08\t2.44\t0.24\n1.0\t12.0\t2.0\t3.0\n1.0\t2.1\t22.4\t3.1\n1.0\t8.0\t6.5\t9.7\n0.0\t0.73\t2.23\t0.43\n0.0\t0.77\t2.23\t1.3\n0.0\t1.65\t2.05\t0.51\n0.0\t0.79\t2.05\t0.51\n0.0\t0.61\t2.05\t1.54\n0.0\t0.03\t2.05\t1.3\n0.0\t1.43\t2.05\t1.54\n0.0\t1.37\t2.05\t1.26\n1.0\t1.8\t15.6\t0.8\n1.0\t0.3\t2.04\t17.5\n0.0\t1.61\t2.05\t0.74\n0.0\t1.31\t2.05\t1.3\n0.0\t1.32\t2.05\t0.51\n0.0\t0.95\t2.05\t0.51\n0.0\t1.01\t2.05\t1.54\n0.0\t0.73\t2.44\t1.54\n0.0\t0.06\t2.23\t1.12\n0.0\t0.99\t2.23\t0.04\n0.0\t1.65\t2.05\t1.22\n0.0\t0.09\t2.05\t1.54\n0.0\t1.56\t2.05\t0.24\n0.0\t1.46\t2.05\t1.3\n0.0\t1.57\t2.05\t0.74\n0.0\t0.79\t2.05\t1.22\n0.0\t0.96\t2.05\t0.78\n0.0\t0.06\t2.05\t1.06\n0.0\t0.78\t2.05\t1.22\n0.0\t0.72\t2.05\t1.22\n0.0\t1.9\t2.05\t0.04\n0.0\t0.3\t2.05\t1.54\n0.0\t0.5\t2.05\t1.26\n1.0\t12.0\t2.0\t3.0\n1.0\t2.1\t22.4\t3.1\n1.0\t8.0\t6.5\t9.7\n1.0\t5.9\t2.0\t33.3\n1.0\t14.0\t3.3\t4.1\n1.0\t1.4\t15.7\t2.0\n1.0\t7.2\t9.5\t11.2\n1.0\t0.9\t1.1\t16.6\n1.0\t11.4\t0.9\t1.3\n1.0\t1.8\t15.6\t0.8\n1.0\t0.3\t2.04\t10.5\n1.0\t22.0\t2.0\t3.0\n1.0\t2.1\t22.4\t3.1\n1.0\t8.0\t67.5\t19.7\n1.0\t5.9\t2.0\t33.3\n1.0\t14.0\t3.3\t4.1\n1.0\t1.4\t15.7\t2.0\n1.0\t7.2\t9.5\t11.2\n1.0\t0.9\t1.1\t16.6\n1.0\t11.4\t0.9\t1.3\n1.0\t1.8\t15.6\t0.8\n1.0\t0.3\t2.04\t17.5\n"
+      },
+      "dateCreated": "Apr 22, 2016 1:27:31 PM",
+      "dateStarted": "Apr 22, 2016 1:40:41 PM",
+      "dateFinished": "Apr 22, 2016 1:40:44 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "config": {},
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1461332441424_1985239683",
+      "id": "20160422-134041_1986121581",
+      "dateCreated": "Apr 22, 2016 1:40:41 PM",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Credit Fraud Detection ML",
+  "id": "2BGDWYZV9",
+  "angularObjects": {
+    "2BFZYQQWT": [],
+    "2BK79YNDX": [],
+    "2BHDFS32X": [],
+    "2BGVQD8EB": [],
+    "2BGAHT9Z7": [],
+    "2BJBKFA6D": [],
+    "2BGFWZST9": [],
+    "2BGKKPA6A": [],
+    "2BHJE8Y6E": [],
+    "2BG1B5GER": [],
+    "2BGF8TK92": [],
+    "2BKKB23DP": [],
+    "2BKKJNQZW": []
+  },
+  "config": {},
+  "info": {}
+}

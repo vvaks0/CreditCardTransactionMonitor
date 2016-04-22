@@ -12,6 +12,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -210,17 +211,47 @@ public class FraudDetector extends BaseRichBolt {
 			e.printStackTrace();
 		}
 		
+		Put transactionToPersist = new Put(Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantId"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("amount"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("currency"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("isCardPresent"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("latitude"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("longitude"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("ipAddress"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionId"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionTimeStamp"), Bytes.toBytes("0000"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromHome"), Bytes.toBytes(String.valueOf("0000")));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromPrev"), Bytes.toBytes(String.valueOf("0000")));
+		try {
+			transactionHistoryTable.put(transactionToPersist);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		Connection conn;
         try {
 			Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-			conn = DriverManager.getConnection("jdbc:phoenix:sandbox.hortonworks.com:2181:/hbase-unsecure");
+			conn = DriverManager.getConnection("jdbc:phoenix:"+ Constants.zkHost + ":" + Constants.zkPort + ":/hbase-unsecure");
 			conn.createStatement().executeUpdate("CREATE VIEW \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, \"Transactions\".\"merchantType\" VARCHAR, \"Transactions\".\"frauduent\" VARCHAR");
 			conn.commit();
+			conn.close();
         } catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}        
+		}
+        
+        Delete transactionToDelete = new Delete(Bytes.toBytes("0000"));
+        try {
+			transactionHistoryTable.delete(transactionToDelete);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
