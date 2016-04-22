@@ -173,7 +173,6 @@ curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "t
 echo "*********************************Installing Maven"
 # Install Maven
 wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
-sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
 yum install -y apache-maven
 
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
