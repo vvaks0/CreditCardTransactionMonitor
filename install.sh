@@ -20,7 +20,8 @@ until [ "$LOOPESCAPE" == true ]; do
         else
         		AUTHSTATUS=$(curl -u admin:admin -I -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
                 if [ "$AUTHSTATUS" == 403 ]; then
-                	echo "THE AMBARI PASSWORD IS NOT SET TO admin"
+                	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
+                	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
                 	exit 403
                 else
                 	TASKSTATUS="PENDING"
@@ -94,8 +95,8 @@ curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonw
 
 sleep 2
 echo "*********************************Creating NIFI configuration..."
+
 # Create and apply configuration
-VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
 /var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
 sleep 2
 /var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
@@ -266,6 +267,7 @@ cd ../SliderConfig
 cp -vf appConfig.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf metainfo.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
+cd ..
 
 STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$STORMSTATUS" == INSTALLED ]; then
@@ -312,16 +314,13 @@ service docker start
 docker pull vvaks/transactionmonitorui
 docker pull vvaks/cometd
 
+# Create Phoenix TransactionHistory View
+#/usr/hdp/current/phoenix-client/bin/sqlline.py localhost:2181:/hbase-unsecure
+tee createTransactionHistoryView.sql <<-'EOF'
+create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
+EOF
+
+/usr/hdp/current/phoenix-client/bin/psql.py sandbox.hortonworks.com createTransactionHistoryView.sql
+
 # Reboot to refresh configuration
 reboot now
-
-#slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
-#sleep 5
-
-#Install NiFi Service in Ambari. Still need to log into Ambari and install the service from the console
-#VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
-#sudo git clone https://github.com/abajwa-hw/ambari-nifi-service.git   /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
-#service ambari restart
-
-#/usr/hdp/current/phoenix-client/bin/sqlline.py localhost:2181:/hbase-unsecure
-#create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);

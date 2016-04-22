@@ -26,17 +26,23 @@ Change Ambari password to "admin" (ambari-admin-password-reset)
 
 cd /root (use the /root directory to begin the install)
 
-git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git (make sure that git cloned to /root/CreditCardTransactionMonitor)
+git clone https://github.com/vakshorton/CreditCardTransactionMonitor.git 
+
+(make sure that git cloned to /root/CreditCardTransactionMonitor)
 
 cd CreditCardTransactionMonitor
 
 ./install.sh
 
-Install script will log out once complete. This is required to refresh session configuration.
+Install script reboot once complete. This is required to refresh session configuration.
+
+Wait for Sandbox to fully reboot
+
 Log back in via SSH (ssh root@sandbox.hortonworks.com -p 2222)
 
 # Start Demo
 The script to start demo services should be located in the /root/CreditCardTransactionMonitor directory
+
 ./startDemoServices.sh
 
 Slider will download the servlet (UI) docker containers from the docker hub so it may take a few minutes for the application server to start
@@ -54,4 +60,5 @@ USAGE:
 java -jar simulator.jar arg1=Simulator-Type{Customer} arg2=EntityId{1000} arg3={Simulation|Training}
 
 Example:
+
 java -jar CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar Customer 1000 Simulation

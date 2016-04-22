@@ -119,8 +119,9 @@ else
 	exit 1
 fi
 
+# Clear Slider working directory
 sudo -u hdfs hadoop fs -rm -R /user/root/.slider/cluster
-
+# Ensure docker service is running
 service docker start
-
+# Start UI servlet on Yarn using Slider
 slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
