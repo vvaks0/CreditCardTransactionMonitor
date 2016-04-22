@@ -36,20 +36,39 @@ echo "*********************************Changing YARN Container Memory Size..."
 sleep 2
 /var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox yarn-site "yarn.nodemanager.resource.memory-mb" "6144"
 
+# Ensure that Yarn is not in a transitional state
+YARNSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
+echo "YARN STATUS: $YARNSTATUS"
+if ! [[ "$YARNSTATUS" == STARTED || "$YARNSTATUS" == INSTALLED ]]; then
+        sleep 2
+        LOOPESCAPE="false"
+        until [ "$LOOPESCAPE" == true ]; do
+                YARNSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
+                if ! [[ "$TASKSTATUS" == STARTED || "$TASKSTATUS" == INSTALLED ]]; then
+                        LOOPESCAPE="true"
+                fi
+                sleep 2
+        done
+fi
+
 sleep 2
 echo "*********************************Restarting YARN..."
-TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop YARN"}, "ServiceInfo": {"state": "INSTALLED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
-echo "*********************************AMBARI TaskID " $TASKID
-sleep 2
-LOOPESCAPE="false"
-until [ "$LOOPESCAPE" == true ]; do
-        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-        if [ "$TASKSTATUS" == COMPLETED ]; then
-                LOOPESCAPE="true"
-        fi
-        echo "*********************************Task Status" $TASKSTATUS
+if [ "$YARNSTATUS" == STARTED ]; then
+        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop YARN"}, "ServiceInfo": {"state": "INSTALLED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
+        echo "*********************************AMBARI TaskID " $TASKID
         sleep 2
-done
+        LOOPESCAPE="false"
+        until [ "$LOOPESCAPE" == true ]; do
+                TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+                if [ "$TASKSTATUS" == COMPLETED ]; then
+                        LOOPESCAPE="true"
+                fi
+                echo "*********************************Task Status" $TASKSTATUS
+                sleep 2
+        done
+elif [ "$YARNSTATUS" == INSTALLED ]; then
+        echo "YARN Service Stopped..."
+fi
 
 TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start YARN"}, "ServiceInfo": {"state": "STARTED"}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep "id" | grep -Po '([0-9]+)')
 echo "*********************************AMBARI TaskID " $TASKID
