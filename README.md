@@ -16,15 +16,11 @@ Configure Virtual Box Port Forward
 
 Start Sandbox, SSH to Sandbox (ssh root@sandbox.hortonworks.com -p 2222)
 
-Change sandbox root password (passwd)
-
 Wait for Sandbox to fully boot up, all service need to finish starting
 
 Change Ambari password to "admin" (ambari-admin-password-reset)
  
 (!!!!!!!!!!!!!AMBARI PASSWORD MUST BE SET TO "admin" (no quotes)!!!!!!)
-
-(!!!!!!!!!!!!!INSTALL WILL NOT WORK WITH ANOTHER PASSWORD!!!!!!!!!!!!!)
 
 cd /root (use the /root directory to begin the install)
 
@@ -64,3 +60,10 @@ java -jar simulator.jar arg1=Simulator-Type{Customer} arg2=EntityId{1000} arg3={
 Example:
 
 java -jar CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar Customer 1000 Simulation
+
+# Transaction Monitor UI
+
+The first view is the Analyst Inbox. When transactions start coming through from the generator, the Inbox will start to fill up. 
+Single click on one fo the transactions to see a preview of the transaction statistics and reason for being flagged.
+
+Double Click on the transaction to explore it in detail in the context of the customer's profile.
