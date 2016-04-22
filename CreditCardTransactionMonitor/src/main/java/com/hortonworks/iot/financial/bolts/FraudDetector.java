@@ -213,8 +213,9 @@ public class FraudDetector extends BaseRichBolt {
 		Connection conn;
         try {
 			Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-			conn =  DriverManager.getConnection("jdbc:phoenix:sandbox.hortonworks.com:2181:/hbase-unsecure");
-			conn.createStatement().executeQuery("CREATE VIEW \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, \"Transactions\".\"merchantType\" VARCHAR, \"Transactions\".\"frauduent\" VARCHAR");
+			conn = DriverManager.getConnection("jdbc:phoenix:sandbox.hortonworks.com:2181:/hbase-unsecure");
+			conn.createStatement().executeUpdate("CREATE VIEW \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, \"Transactions\".\"merchantType\" VARCHAR, \"Transactions\".\"frauduent\" VARCHAR");
+			conn.commit();
         } catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
