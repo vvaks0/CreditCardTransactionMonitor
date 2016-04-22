@@ -213,20 +213,8 @@ public class FraudDetector extends BaseRichBolt {
 		
 		Put transactionToPersist = new Put(Bytes.toBytes("0000"));
 		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantId"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("amount"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("currency"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("isCardPresent"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("latitude"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("longitude"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("ipAddress"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionId"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionTimeStamp"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromHome"), Bytes.toBytes(String.valueOf("0000")));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromPrev"), Bytes.toBytes(String.valueOf("0000")));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes("false"));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes("type"));
 		try {
 			transactionHistoryTable.put(transactionToPersist);
 		} catch (IOException e) {
