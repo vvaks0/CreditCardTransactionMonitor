@@ -18,7 +18,13 @@ until [ "$LOOPESCAPE" == true ]; do
                 LOOPESCAPE="true"
                 TASKSTATUS="READY"
         else
-                TASKSTATUS="PENDING"
+        		AUTHSTATUS=$(curl -u admin:admin -I -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
+                if [ "$AUTHSTATUS" == 403 ]; then
+                	echo "THE AMBARI PASSWORD IS NOT SET TO admin"
+                	exit 403
+                else
+                	TASKSTATUS="PENDING"
+                fi
         fi
 		echo "Waiting for Ambari..."
         echo "Ambari Status... " $TASKSTATUS
@@ -287,8 +293,8 @@ service docker start
 docker pull vvaks/transactionmonitorui
 docker pull vvaks/cometd
 
-# Logout to refresh session configuration
-logout
+# Reboot to refresh configuration
+reboot now
 
 #slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
 #sleep 5
