@@ -185,14 +185,40 @@ public class FraudDetector extends BaseRichBolt {
 	    // Instantiating HTable
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
+			
 			if (hbaseAdmin.tableExists("TransactionHistory")) {
 				transactionHistoryTable = new HTable(config, "TransactionHistory");
 			}else{
+				Connection conn;
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ Constants.zkHost + ":" + Constants.zkPort + ":/hbase-unsecure");
+				conn.createStatement().executeUpdate("create table \"TransactionHistory\" "
+						+ "(pk VARCHAR PRIMARY KEY, "
+						+ "\"Transactions\".\"accountNumber\" VARCHAR, "
+						+ "\"Transactions\".\"accountType\" VARCHAR, "
+						+ "\"Transactions\".\"merchantType\" VARCHAR, "
+						+ "\"Transactions\".\"frauduent\" VARCHAR, "
+						+ "\"Transactions\".\"merchantId\" VARCHAR, "
+						+ "\"Transactions\".\"amount\" INTEGER, "
+						+ "\"Transactions\".\"currency\" VARCHAR, "
+						+ "\"Transactions\".\"isCardPresent\" VARCHAR, "
+						+ "\"Transactions\".\"latitude\" FLOAT, "
+						+ "\"Transactions\".\"longitude\" FLOAT, "
+						+ "\"Transactions\".\"ipAddress\" VARCHAR, "
+						+ "\"Transactions\".\"transactionId\" VARCHAR, "
+						+ "\"Transactions\".\"transactionTimeStamp\" BIGINT, "
+						+ "\"Transactions\".\"distanceFromHome\" FLOAT, "
+						+ "\"Transactions\".\"distanceFromPrev\" FLOAT)");
+				conn.commit();
+				conn.close();
+				
+				transactionHistoryTable = new HTable(config, "TransactionHistory");
+				/*
 				HTableDescriptor tableDescriptor = new HTableDescriptor("TransactionHistory");
 				HColumnDescriptor cfColumnFamily = new HColumnDescriptor("Transactions".getBytes());
 		        tableDescriptor.addFamily(cfColumnFamily);
 		        hbaseAdmin.createTable(tableDescriptor);
-		        transactionHistoryTable = new HTable(config, "TransactionHistory");
+		        transactionHistoryTable = new HTable(config, "TransactionHistory"); */
 			}
 			
 			if (hbaseAdmin.tableExists("CustomerAccount")) {
@@ -209,35 +235,9 @@ public class FraudDetector extends BaseRichBolt {
 			hbaseAdmin.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		
-		Put transactionToPersist = new Put(Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes("0000"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes("false"));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes("type"));
-		try {
-			transactionHistoryTable.put(transactionToPersist);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		Connection conn;
-        try {
-			Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-			conn = DriverManager.getConnection("jdbc:phoenix:"+ Constants.zkHost + ":" + Constants.zkPort + ":/hbase-unsecure");
-			conn.createStatement().executeUpdate("CREATE VIEW \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, \"Transactions\".\"merchantType\" VARCHAR, \"Transactions\".\"frauduent\" VARCHAR");
-			conn.commit();
-			conn.close();
-        } catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-        
-        Delete transactionToDelete = new Delete(Bytes.toBytes("0000"));
-        try {
-			transactionHistoryTable.delete(transactionToDelete);
-		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
