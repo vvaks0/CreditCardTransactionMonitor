@@ -315,15 +315,5 @@ service docker start
 docker pull vvaks/transactionmonitorui
 docker pull vvaks/cometd
 
-# Create Phoenix TransactionHistory View
-#/usr/hdp/current/phoenix-client/bin/sqlline.py localhost:2181:/hbase-unsecure
-tee createTransactionHistoryView.sql <<-'EOF'
-create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
-EOF
-
-echo "Sleeping 30 seconds to allow Storm Topology to create HBase tables"
-sleep 30
-/usr/hdp/current/phoenix-client/bin/psql.py sandbox.hortonworks.com createTransactionHistoryView.sql
-
 # Reboot to refresh configuration
 reboot now
