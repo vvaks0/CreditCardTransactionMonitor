@@ -45,10 +45,11 @@ echo "YARN STATUS: $YARNSTATUS"
 LOOPESCAPE="false"
 if ! [[ "$YARNSTATUS" == STARTED || "$YARNSTATUS" == INSTALLED ]]; then
         until [ "$LOOPESCAPE" == true ]; do
-                YARNSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
+                TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/YARN | grep '"state" :' | grep -Po '([A-Z]+)')
                 if [[ "$TASKSTATUS" == STARTED || "$TASKSTATUS" == INSTALLED ]]; then
                         LOOPESCAPE="true"
                 fi
+                echo "*********************************Task Status" $TASKSTATUS
                 sleep 2
         done
 fi
