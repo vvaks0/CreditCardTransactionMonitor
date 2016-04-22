@@ -320,6 +320,8 @@ tee createTransactionHistoryView.sql <<-'EOF'
 create view "TransactionHistory" (pk VARCHAR PRIMARY KEY, "Transactions"."merchantType" VARCHAR, "Transactions"."frauduent" VARCHAR);
 EOF
 
+echo "Sleeping 30 seconds to allow Storm Topology to create HBase tables"
+sleep 30
 /usr/hdp/current/phoenix-client/bin/psql.py sandbox.hortonworks.com createTransactionHistoryView.sql
 
 # Reboot to refresh configuration
