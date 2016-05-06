@@ -67,3 +67,5 @@ The first view is the Analyst Inbox. When transactions start coming through from
 Single click on one fo the transactions to see a preview of the transaction statistics and reason for being flagged.
 
 Double Click on the transaction to explore it in detail in the context of the customer's profile.
+
+![Alt text](/screenshot/TransactionMonitorScreenShot.png "MapUI")
