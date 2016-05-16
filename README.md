@@ -69,3 +69,11 @@ Single click on one fo the transactions to see a preview of the transaction stat
 Double Click on the transaction to explore it in detail in the context of the customer's profile.
 
 ![Alt text](/screenshot/TransactionMonitorScreenShot.png "MapUI")
+
+# Customer Mobile App
+
+Follow instructions in the CreditCardTransactionMonitorMobileApp Repo:
+
+https://github.com/vakshorton/CreditCardTransactionMonitorMobileApp
+
+
