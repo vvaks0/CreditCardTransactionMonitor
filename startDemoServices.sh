@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CLUSTER_NAME=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters |grep cluster_name|grep -Po ': "([a-zA-Z]+)'|grep -Po '[a-zA-Z]+')
+HOSTNAME=$(hostname)
 #Start Kafka
 KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$KAFKASTATUS" == INSTALLED ]; then
