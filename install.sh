@@ -202,7 +202,8 @@ if [ -z "$NIFI_HOME" ]; then
         NIFI_HOME=$(ls /opt/|grep HDF)
 fi
 export NIFI_HOME
-cp -vf target/AtlasLineageProcessor-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
+cp -vf target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
+cd ..
 
 #Start Kafka
 KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')

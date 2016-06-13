@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #Start Kafka
-KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')
+KAFKASTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$KAFKASTATUS" == INSTALLED ]; then
 	echo "Starting Kafka Broker..."
-	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Kafka via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/KAFKA | grep "id" | grep -Po '([0-9]+)')
+	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Kafka via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA | grep "id" | grep -Po '([0-9]+)')
 	echo "AMBARI TaskID " $TASKID
 	sleep 2
 
@@ -12,7 +12,7 @@ if [ "$KAFKASTATUS" == INSTALLED ]; then
 
 	until [ "$LOOPESCAPE" == true ]; do
 
-		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
@@ -31,10 +31,10 @@ fi
 
 sleep 1
 # Start NIFI service
-NIFISTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep '"state" :' | grep -Po '([A-Z]+)')
+NIFISTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$NIFISTATUS" == INSTALLED ]; then
 	echo "Starting NIFI Service"
-	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start NIFI"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start NIFI"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
 
 	echo "AMBARI TaskID " $TASKID
 	sleep 2
@@ -42,7 +42,7 @@ if [ "$NIFISTATUS" == INSTALLED ]; then
 	LOOPESCAPE="false"
 	until [ "$LOOPESCAPE" == true ]; do
 
-        	TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+        	TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
         	if [ "$TASKSTATUS" == COMPLETED ]; then
                 	LOOPESCAPE="true"
         	fi
@@ -61,10 +61,10 @@ fi
 
 sleep 1
 #Start HBASE
-HBASESTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/HBASE | grep '"state" :' | grep -Po '([A-Z]+)')
+HBASESTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/HBASE | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$HBASESTATUS" == INSTALLED ]; then
 	echo "Starting  Hbase Service..."
-	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Hbase via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/HBASE | grep "id" | grep -Po '([0-9]+)')
+	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Hbase via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/HBASE | grep "id" | grep -Po '([0-9]+)')
 	echo "HBASE TaskId " $TASKID
 	sleep 2
 
@@ -72,7 +72,7 @@ if [ "$HBASESTATUS" == INSTALLED ]; then
 
 	until [ "$LOOPESCAPE" == true ]; do
 
-		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
@@ -91,10 +91,10 @@ fi
 
 sleep 1
 # Start Storm
-STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
+STORMSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/STORM | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$STORMSTATUS" == INSTALLED ]; then
 	echo "Starting Storm Service..."
-	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Storm via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/STORM | grep "id" | grep -Po '([0-9]+)')
+	TASKID=$(curl -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{"RequestInfo": {"context" :"Start Storm via REST"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/STORM | grep "id" | grep -Po '([0-9]+)')
 	echo "STORM TaskId " $TASKID
 	sleep 2
 
@@ -102,7 +102,7 @@ if [ "$STORMSTATUS" == INSTALLED ]; then
 
 	until [ "$LOOPESCAPE" == true ]; do
 
-		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
 		if [ "$TASKSTATUS" == COMPLETED ]; then
 			LOOPESCAPE="true"
  		fi
