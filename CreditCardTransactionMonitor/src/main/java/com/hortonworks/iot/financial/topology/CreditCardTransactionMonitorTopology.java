@@ -112,8 +112,8 @@ public class CreditCardTransactionMonitorTopology {
 	      conf.setMaxSpoutPending(5000);
 	      conf.setMaxTaskParallelism(1);
 	      
-	      submitToLocal(builder, conf);
-	      //submitToCluster(builder, conf);
+	      //submitToLocal(builder, conf);
+	      submitToCluster(builder, conf);
 	 }
 	 
 	 public static void submitToLocal(TopologyBuilder builder, Config conf){
