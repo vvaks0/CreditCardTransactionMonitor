@@ -1,6 +1,9 @@
 package com.hortonworks.iot.financial.bolts;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -17,6 +20,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import com.hortonworks.iot.financial.events.EnrichedTransaction;
 import com.hortonworks.iot.financial.events.IncomingTransaction;
 import com.hortonworks.iot.financial.util.Constants;
+import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -28,6 +32,8 @@ import backtype.storm.tuple.Values;
 
 public class EnrichTransaction extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
+	private String componentId;
+	private String componentType;
 	private String tableName = "CustomerAccount";
     private HTable table = null;
 	private OutputCollector collector;
@@ -35,6 +41,12 @@ public class EnrichTransaction extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 		IncomingTransaction incomingTransaction = (IncomingTransaction) tuple.getValueByField("IncomingTransaction");
 		EnrichedTransaction enrichedTransaction = new EnrichedTransaction();
+		
+		String actionType = "MODIFY";
+		List<StormProvenanceEvent> stormProvenance = (List<StormProvenanceEvent>)tuple.getValueByField("ProvenanceEvent");
+		String transactionKey = stormProvenance.get(0).getEventKey();
+		StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
+	    stormProvenance.add(provenanceEvent);
 		
 		enrichedTransaction.setAccountNumber(incomingTransaction.getAccountNumber());
 		enrichedTransaction.setAccountType(incomingTransaction.getAccountType());
@@ -111,7 +123,7 @@ public class EnrichTransaction extends BaseRichBolt {
 			System.out.println("*************** " + enrichedTransaction.getTimeDeltaSecDev());
 			System.out.println("*************** " + enrichedTransaction.getTimeDetlaSecMean());
 			
-			collector.emit(tuple, new Values((EnrichedTransaction)enrichedTransaction));
+			collector.emit(tuple, new Values((EnrichedTransaction)enrichedTransaction, stormProvenance));
 			collector.ack(tuple);
 		}
 		else{
@@ -122,7 +134,9 @@ public class EnrichTransaction extends BaseRichBolt {
 	}
 
 	@SuppressWarnings("deprecation")
-	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
+		this.componentId = context.getThisComponentId();
+		this.componentType = "BOLT";
 		Configuration config = HBaseConfiguration.create();
 		config.set("hbase.zookeeper.quorum", Constants.zkHost);
 		config.set("hbase.zookeeper.property.clientPort", Constants.zkPort);
@@ -196,6 +210,6 @@ public class EnrichTransaction extends BaseRichBolt {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("EnrichedTransaction"));
+		declarer.declare(new Fields("EnrichedTransaction","ProvenanceEvent"));
 	}
 }

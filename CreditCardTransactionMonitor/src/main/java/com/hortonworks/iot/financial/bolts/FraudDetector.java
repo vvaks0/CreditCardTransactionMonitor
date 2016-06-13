@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -30,6 +32,7 @@ import com.hortonworks.iot.financial.events.EnrichedTransaction;
 import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.Model;
 import com.hortonworks.iot.financial.util.Profile;
+import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -45,13 +48,23 @@ public class FraudDetector extends BaseRichBolt {
 	private HTable transactionHistoryTable = null;
 	private HTable customerAccountTable = null;
 	private SVMModel svm;
-	private String pathToWeights = "/demo/models/modelWeights"; 
+	private String pathToWeights = "/demo/models/modelWeights";
+	private String componentId;
+	private String componentType;
 	
 	//private SparkContext sc;
 	
 	public void execute(Tuple tuple)  {
 		EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("EnrichedTransaction");
 		EnrichedTransaction previousTransaction = null;
+		
+		String actionType = "SEND";
+		List<StormProvenanceEvent> stormProvenance = (List<StormProvenanceEvent>)tuple.getValueByField("ProvenanceEvent");
+		String transactionKey = stormProvenance.get(0).getEventKey();
+	    StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
+	    provenanceEvent.setTargetDataRepositoryType("HBASE");
+	    provenanceEvent.setTargetDataRepositoryLocation(Constants.zkConnString+":/hbase-unsecure:"+transactionHistoryTable.getName().getNameAsString());
+	    stormProvenance.add(provenanceEvent);
 		
 		try {
 			previousTransaction = getLastTransaction(transaction.getAccountNumber()); 
@@ -74,6 +87,7 @@ public class FraudDetector extends BaseRichBolt {
 			persistTransactionToHbase(transaction);
 			collector.emit("FraudulentTransactionStream", new Values(transaction));
 		}
+		collector.emit("ProvenanceRegistrationStream", new Values(stormProvenance));
 		collector.ack(tuple);
 	}
 	
@@ -166,7 +180,9 @@ public class FraudDetector extends BaseRichBolt {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
+		this.componentId = context.getThisComponentId();
+		this.componentType = "BOLT";
 		this.collector = collector;
 		double intercept = -1.7535004133947043;
 		double [] weights = {0.17751022275925205,0.060917670306210064,0.10924794398547727};
@@ -245,5 +261,6 @@ public class FraudDetector extends BaseRichBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declareStream("LegitimateTransactionStream", new Fields("EnrichedTransaction"));
 		declarer.declareStream("FraudulentTransactionStream", new Fields("EnrichedTransaction"));
+		declarer.declareStream("ProvenanceRegistrationStream", new Fields("ProvenanceEvent"));
 	}
 }

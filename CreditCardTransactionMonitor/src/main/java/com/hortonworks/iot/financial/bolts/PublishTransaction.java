@@ -27,7 +27,7 @@ public class PublishTransaction extends BaseRichBolt {
 	private OutputCollector collector;
 	
 	public void execute(Tuple tuple) {
-EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("EnrichedTransaction");
+		EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("EnrichedTransaction");
 		
 		Map<String, Object> data = new HashMap<String, Object>();
 		data.put("transactionId", transaction.getTransactionId());
@@ -97,7 +97,7 @@ EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("E
 		collector.ack(tuple);
 	}
 
-	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		
 		HttpClient httpClient = new HttpClient();
