@@ -594,9 +594,21 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				   			+ "\"reverseAttributeName\": null}]}]}";
 		
 		try {
-			atlasClient.createType(stormTopologyType);
-			atlasClient.createType(nifiFlowType);
-			atlasClient.createType(eventType);
+			if(atlasClient.getType("storm_topology_reference") == null){
+				atlasClient.createType(stormTopologyType);
+			}else{
+				System.out.println("Atlas Type: storm_topology_reference already exists");
+			}
+			if(atlasClient.getType("nifi_flow") == null){
+				atlasClient.createType(nifiFlowType);
+			}else{
+				System.out.println("Atlas Type: nifi_flow already exists");
+			}
+			if(atlasClient.getType("event") == null){
+				atlasClient.createType(eventType);
+			}else{
+				System.out.println("Atlas Type: event already exists");
+			}
 		} catch (AtlasServiceException e) {
 			e.printStackTrace();
 		}
