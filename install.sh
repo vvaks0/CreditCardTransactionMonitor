@@ -99,15 +99,15 @@ sleep 2
 echo "*********************************Creating NIFI configuration..."
 
 # Create and apply configuration
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-ambari-config /root/CreditCardTransactionMonitor/Nifi/config/nifi-ambari-config.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-ambari-config Nifi/config/nifi-ambari-config.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-bootstrap-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-bootstrap-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-bootstrap-env Nifi/config/nifi-bootstrap-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-flow-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-flow-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-flow-env Nifi/config/nifi-flow-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-logback-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-logback-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-logback-env Nifi/config/nifi-logback-env.json
 sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-properties-env /root/CreditCardTransactionMonitor/Nifi/config/nifi-properties-env.json
+/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com Sandbox nifi-properties-env Nifi/config/nifi-properties-env.json
 
 sleep 2
 echo "*********************************Adding NIFI MASTER role to Host..."
