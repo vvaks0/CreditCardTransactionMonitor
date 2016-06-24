@@ -21,8 +21,7 @@ import backtype.storm.tuple.Values;
 
 public class PublishAccountStatusUpdate extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
-	private String pubSubUrl = Constants.pubSubUrl;
-	private String accountStatusUpdateChannel = Constants.accountStatusUpdateChannel;
+	private Constants constants;
 	private BayeuxClient bayuexClient;
 	private OutputCollector collector;
 	
@@ -34,7 +33,7 @@ public class PublishAccountStatusUpdate extends BaseRichBolt {
 		data.put("transactionId", customerResponse.getTransactionId());
 		data.put("fraudulent", customerResponse.getFraudulent());
 		
-		bayuexClient.getChannel(accountStatusUpdateChannel).publish(data);
+		bayuexClient.getChannel(constants.getAccountStatusUpdateChannel()).publish(data);
 		
 		collector.emit(tuple, new Values((CustomerResponse) customerResponse));
 		collector.ack(tuple);
@@ -42,7 +41,7 @@ public class PublishAccountStatusUpdate extends BaseRichBolt {
 
 	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
 		this.collector = collector;
-		
+		constants = new Constants();
 		HttpClient httpClient = new HttpClient();
 		try {
 			httpClient.start();
@@ -55,8 +54,7 @@ public class PublishAccountStatusUpdate extends BaseRichBolt {
 		ClientTransport transport = new LongPollingTransport(options, httpClient);
 
 		// Create the BayeuxClient
-		bayuexClient = new BayeuxClient(pubSubUrl, transport);
-		
+		bayuexClient = new BayeuxClient(constants.getPubSubUrl(), transport);
 		bayuexClient.handshake();
 		boolean handshaken = bayuexClient.waitFor(3000, BayeuxClient.State.CONNECTED);
 		if (handshaken)

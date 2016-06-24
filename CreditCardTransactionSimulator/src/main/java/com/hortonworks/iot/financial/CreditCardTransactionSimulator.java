@@ -26,6 +26,7 @@ public class CreditCardTransactionSimulator {
 	 // Base URI the Grizzly HTTP server will listen on
     public static String ipaddress;
     public static String port;
+	public static String targetIP;
 	public static HttpServer startServer(String simType, String deviceId) {
     	//Map<String,String> deviceDetailsMap = new HashMap<String, String>();
     	Map<String,String> deviceNetworkInfoMap = new HashMap<String, String>();
@@ -96,6 +97,11 @@ public class CreditCardTransactionSimulator {
 		String simType = args[0];
 		String customerId = args[1];
 		String mode = args[2];
+		if(args.length > 3){	
+			targetIP = args[3];
+		}else{
+			targetIP = "sandbox.hortonworks.com";
+		}
 		System.out.println("Starting Cache...");
 		CacheManager.create();
 		CacheManager.getInstance().addCache("CustomerActionRequest");
@@ -108,7 +114,7 @@ public class CreditCardTransactionSimulator {
 			Map networkInfo = getNetworkInfo(customerId, simType);
 			ipaddress =  (String)networkInfo.get("ipaddress");
 			port =  (String)networkInfo.get("port");
-			TransactionSimulator tech = new TransactionSimulator(customerId, ipaddress, port, mode);
+			TransactionSimulator tech = new TransactionSimulator(customerId, targetIP, ipaddress, port, mode);
             customerThread = new Thread(tech);
             customerThread.setName("Customer: " + customerId);
             customerThread.start();

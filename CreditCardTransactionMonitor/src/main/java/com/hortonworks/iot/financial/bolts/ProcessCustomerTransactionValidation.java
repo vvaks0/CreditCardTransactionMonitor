@@ -34,6 +34,7 @@ public class ProcessCustomerTransactionValidation extends BaseRichBolt {
 	private HTable customerAccountTable = null;
 	private HTable transactionHistoryTable = null;
 	private OutputCollector collector;
+	private Constants constants;
 	
 	public void execute(Tuple tuple) {
 		CustomerResponse customerResponse = (CustomerResponse) tuple.getValueByField("CustomerResponse");
@@ -79,37 +80,38 @@ public class ProcessCustomerTransactionValidation extends BaseRichBolt {
 	
 	@SuppressWarnings("deprecation")
 	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+		this.constants = new Constants();
 		Configuration config = HBaseConfiguration.create();
-		config.set("hbase.zookeeper.quorum", Constants.zkHost);
-		config.set("hbase.zookeeper.property.clientPort", Constants.zkPort);
-		config.set("zookeeper.znode.parent", "/hbase-unsecure");
+		config.set("hbase.zookeeper.quorum", constants.getZkHost());
+		config.set("hbase.zookeeper.property.clientPort", constants.getZkPort());
+		config.set("zookeeper.znode.parent", constants.getZkHBasePath());
 		
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
-			if (hbaseAdmin.tableExists(customerAccountTableName)) {
-				customerAccountTable = new HTable(config, customerAccountTableName);
-			}else{
-				HTableDescriptor customerAccountTableDescriptor = new HTableDescriptor(customerAccountTableName);
-				HColumnDescriptor cfIIColumnFamily = new HColumnDescriptor("AccountDetails".getBytes());
-				customerAccountTableDescriptor.addFamily(cfIIColumnFamily);
-				customerAccountTableDescriptor.addFamily(cfIIColumnFamily);
-				customerAccountTable = new HTable(config, customerAccountTableName);
-				hbaseAdmin.createTable(customerAccountTableDescriptor);
+			
+			while(!hbaseAdmin.tableExists(customerAccountTableName)){
+				if(hbaseAdmin.tableExists(customerAccountTableName)) {	
+					customerAccountTable = new HTable(config, customerAccountTableName);
+				}else{
+					System.out.println("ProcessCustomerValidationBolt Prepare() is waiting for " + customerAccountTableName + " table to be created....");
+					Thread.sleep(5000);
+				}
 			}
 			
-			if (hbaseAdmin.tableExists(customerAccountTableName)) {
-				transactionHistoryTable = new HTable(config, transactionHistoryTableName);
-			}else{
-				HTableDescriptor transactionHistoryTableDescriptor = new HTableDescriptor(transactionHistoryTableName);
-				HColumnDescriptor transactionsColumnFamily = new HColumnDescriptor("Transactions".getBytes());
-				transactionHistoryTableDescriptor.addFamily(transactionsColumnFamily);
-				transactionHistoryTable = new HTable(config, transactionHistoryTableName);
-				hbaseAdmin.createTable(transactionHistoryTableDescriptor);
+			while(!hbaseAdmin.tableExists(transactionHistoryTableName)) {
+				if(hbaseAdmin.tableExists(transactionHistoryTableName)) {
+					transactionHistoryTable = new HTable(config, transactionHistoryTableName);	
+				}else{
+					System.out.println("ProcessCustomerValidationBolt Prepare() is waiting for " + transactionHistoryTableName + " table to be created....");
+					Thread.sleep(5000);
+				}
 			}
 			hbaseAdmin.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} 
 
 		this.collector = collector;
 	}

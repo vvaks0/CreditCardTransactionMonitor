@@ -47,7 +47,7 @@ import storm.kafka.ZkHosts;
 public class CreditCardTransactionMonitorTopology {
 	 public static void main(String[] args) {
 	     TopologyBuilder builder = new TopologyBuilder();
-	        
+	     Constants constants = new Constants();   
 	     // Use pipe as record boundary
 	  	  RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
 
@@ -58,24 +58,34 @@ public class CreditCardTransactionMonitorTopology {
 	  	  FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, Units.MB);
 
 	  	  // Use default, Storm-generated file names
-	  	  FileNameFormat transactionLogFileNameFormat = new DefaultFileNameFormat().withPath(Constants.hivePath);
+	  	  FileNameFormat transactionLogFileNameFormat = new DefaultFileNameFormat().withPath(constants.getHivePath());
 	  	  HdfsBolt LogTransactionHdfsBolt = new HdfsBolt()
-	  		     .withFsUrl(Constants.nameNode)
+	  		     .withFsUrl(constants.getNameNode())
 	  		     .withFileNameFormat(transactionLogFileNameFormat)
 	  		     .withRecordFormat(format)
 	  		     .withRotationPolicy(rotationPolicy)
 	  		     .withSyncPolicy(syncPolicy);
-	       
+	  	System.out.println("********************** Starting Topology.......");
+	  	System.out.println("********************** Zookeeper Host: " + constants.getZkHost());
+        System.out.println("********************** Zookeeper Port: " + constants.getZkPort());
+        System.out.println("********************** Zookeeper ConnString: " + constants.getZkConnString());
+        System.out.println("********************** Zookeeper Kafka Path: " + constants.getZkKafkaPath());
+        System.out.println("********************** Zookeeper HBase Path: " + constants.getZkHBasePath());
+        System.out.println("********************** Cometd URI: " + constants.getPubSubUrl());
+	  	  
 	      Config conf = new Config(); 
-	      BrokerHosts hosts = new ZkHosts(Constants.zkConnString);
+	      //BrokerHosts hosts = new ZkHosts(Constants.zkConnString);
+	      BrokerHosts hosts = new ZkHosts(constants.getZkConnString(), constants.getZkKafkaPath());
 	      
-	      SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, Constants.incomingTransactionsTopicName, "/" + Constants.incomingTransactionsTopicName, UUID.randomUUID().toString());
+	      //SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, Constants.incomingTransactionsTopicName, "/" + Constants.incomingTransactionsTopicName, UUID.randomUUID().toString());
+	      SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, constants.getIncomingTransactionsTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
 	      incomingTransactionsKafkaSpoutConfig.scheme = new KeyValueSchemeAsMultiScheme(new TransactionEventJSONScheme());
 	      incomingTransactionsKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
 	      incomingTransactionsKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
 	      KafkaSpout incomingTransactionsKafkaSpout = new KafkaSpout(incomingTransactionsKafkaSpoutConfig); 
 	      
-	      SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, Constants.customerTransactionValidationTopicName, "/" + Constants.customerTransactionValidationTopicName, UUID.randomUUID().toString());
+	      //SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, Constants.customerTransactionValidationTopicName, "/" + Constants.customerTransactionValidationTopicName, UUID.randomUUID().toString());
+	      SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, constants.getCustomerTransactionValidationTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
 	      customerTransactionValidationKafkaSpoutConfig.scheme = new SchemeAsMultiScheme(new CustomerResponseEventJSONScheme());
 	      customerTransactionValidationKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
 	      customerTransactionValidationKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();

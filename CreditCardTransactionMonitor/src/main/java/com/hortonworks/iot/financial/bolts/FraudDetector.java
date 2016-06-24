@@ -51,6 +51,7 @@ public class FraudDetector extends BaseRichBolt {
 	private String pathToWeights = "/demo/models/modelWeights";
 	private String componentId;
 	private String componentType;
+	private Constants constants;
 	
 	//private SparkContext sc;
 	
@@ -63,7 +64,7 @@ public class FraudDetector extends BaseRichBolt {
 		String transactionKey = stormProvenance.get(0).getEventKey();
 	    StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
 	    provenanceEvent.setTargetDataRepositoryType("HBASE");
-	    provenanceEvent.setTargetDataRepositoryLocation(Constants.zkConnString+":/hbase-unsecure:"+transactionHistoryTable.getName().getNameAsString());
+	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath() + ":" + transactionHistoryTable.getName().getNameAsString());
 	    stormProvenance.add(provenanceEvent);
 		
 		try {
@@ -181,6 +182,7 @@ public class FraudDetector extends BaseRichBolt {
 	
 	@SuppressWarnings("deprecation")
 	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
+		this.constants = new Constants();
 		this.componentId = context.getThisComponentId();
 		this.componentType = "BOLT";
 		this.collector = collector;
@@ -194,9 +196,9 @@ public class FraudDetector extends BaseRichBolt {
 		//final SVMModel nostradamus = SVMModel.load(sc, "nostradamusSVMModel");
 		
 		Configuration config = HBaseConfiguration.create();
-		config.set("hbase.zookeeper.quorum", Constants.zkHost);
-		config.set("hbase.zookeeper.property.clientPort", Constants.zkPort);
-		config.set("zookeeper.znode.parent", "/hbase-unsecure");
+		config.set("hbase.zookeeper.quorum", constants.getZkHost());
+		config.set("hbase.zookeeper.property.clientPort", constants.getZkPort());
+		config.set("zookeeper.znode.parent", constants.getZkHBasePath());
 		
 	    // Instantiating HTable
 		try {
@@ -207,7 +209,7 @@ public class FraudDetector extends BaseRichBolt {
 			}else{
 				Connection conn;
 				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-				conn = DriverManager.getConnection("jdbc:phoenix:"+ Constants.zkHost + ":" + Constants.zkPort + ":/hbase-unsecure");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
 				conn.createStatement().executeUpdate("create table \"TransactionHistory\" "
 						+ "(pk VARCHAR PRIMARY KEY, "
 						+ "\"Transactions\".\"accountNumber\" VARCHAR, "

@@ -206,7 +206,9 @@ div#customer_container{
   
   	var table;
   	var tableData;
-  	var pubSubUrl = "http://sandbox.hortonworks.com:8091/cometd";
+  	var cometdHost = "${cometdHost}";
+  	var cometdPort = ${cometdPort};
+  	var pubSubUrl = "http://" + cometdHost + ":" + cometdPort + "/cometd";
   	var alertChannel = "/fraudAlert";
     var incomingTransactionsChannel = "/incomingTransactions";
   	var customerValidationChannel = "/accountStatusUpdate";

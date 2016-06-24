@@ -48,6 +48,7 @@ public class TransactionSimulator implements Runnable {
     private String expMonth;
     private String expYear;
     private String mode;
+    private String targetIP;
     private long currentTimeEpoch;
     private long simulationEpochStart = Long.valueOf("1362096000000"); //Fri, 01 Mar 2013 00:00:00 GMT
     private Map<String,String> transactionAmountByVendor = new HashMap<String,String>();
@@ -57,13 +58,14 @@ public class TransactionSimulator implements Runnable {
     
     Random random = new Random();
     
-    public TransactionSimulator(String customerId, String ipaddress, String port, String mode) throws ParseException {
-        initialize(customerId, ipaddress, port, mode);
+    public TransactionSimulator(String customerId, String targetIP, String ipaddress, String port, String mode) throws ParseException {
+        initialize(customerId, targetIP, ipaddress, port, mode);
     }
     
-    public void initialize(String customerId, String ipaddress, String port, String mode) throws ParseException{
+    public void initialize(String customerId, String targetIP, String ipaddress, String port, String mode) throws ParseException{
         this.customerId = customerId;
         this.ipaddress = ipaddress;
+        this.targetIP = targetIP;
         this.port = port;
         this.mode = mode;
         this.currentTimeEpoch = getCurrentDateEpochStart();
@@ -217,7 +219,7 @@ public class TransactionSimulator implements Runnable {
         System.out.println("Sending Transaction Information ************************");
         
         try{
-        	URL url = new URL("http://sandbox.hortonworks.com:8082/contentListener");
+        	URL url = new URL("http://" + targetIP + ":8082/contentListener");
     		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     		conn.setDoOutput(true);
     		conn.setRequestMethod("POST");
@@ -252,7 +254,7 @@ public class TransactionSimulator implements Runnable {
 	}
   
     public void simulateTransactionHistory() throws ParseException, IOException{
-    	String apiKey = "AIzaSyCFVrLU-3M5RMAHqchPSxC-lkXC8SROOQA";
+    	String apiKey = "";
     	String homeLat = "39.919512";
     	String homeLng = "-75.005711";
     	String googlePlacesString =null;

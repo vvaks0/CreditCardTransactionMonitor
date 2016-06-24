@@ -281,7 +281,9 @@ div#account_container{
   dojo.require("dojox.cometd");
   dojo.require("dojox.cometd.longPollTransport");
   
-  var pubSubUrl = "http://sandbox.hortonworks.com:8091/cometd";
+  var cometdHost = "${cometdHost}";
+  var cometdPort = "${cometdPort}";
+  var pubSubUrl = "http://" + cometdHost + ":" + cometdPort + "/cometd";
   var alertChannel = "/fraudAlert";
   var incomingTransactionsChannel = "/incomingTransactions";
   var preview = {};
@@ -350,7 +352,56 @@ div#account_container{
   			}	
   		});
   		
-  	}
+  }
+  
+  function renderInitialInboxItems(){
+	<c:forEach items="${transactionHistory}" var="transaction">
+		var iDiv = document.getElementById("inbox");
+		var pDiv = document.getElementById("previewPane");
+		var messageDiv = document.createElement("div");
+		var previewDiv = document.createElement("div");
+		var chartDiv = document.createElement("div");
+		
+		messageDiv.className = "message";
+		messageDiv.id = ${transaction.transactionTimeStamp} + '1000';
+		messageDiv.onclick = function(){showPreview(this.id)};
+		messageDiv.ondblclick = function(){location.href='CustomerOverview?requestType=customerDetails&accountNumber=' + ${transaction.accountNumber}};
+		messageDiv.onmouseout = function(){closePreview(this.id)};
+		if(${transaction.fraudulent} == true){	
+			messageDiv.style.backgroundColor = "rgba(216,20,20,0.25)";
+			messageDiv.innerHTML = 'TransactionId: ' + ${transaction.transactionId} + '<br>' +
+			<%--'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber +'">' + message.data.accountNumber + '</a><br>' + --%>
+			'Account Number: ' + ${transaction.accountNumber}; 	
+		}else{
+			messageDiv.style.backgroundColor = "rgba(63,171,42,.25)";
+			messageDiv.innerHTML = 'TransactionId: ' + ${transaction.transactionId} + '<br>' +
+			<%--'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber +'">' + message.data.accountNumber + '</a><br>' + --%>
+		'Account Number: ' + ${transaction.accountNumber};
+		}	
+		previewDiv.className = "chart";
+		previewDiv.id = "preview${transaction.transactionTimeStamp}";
+		previewDiv.innerHTML = 'TransactionId: ${transaction.transactionId} <br>' +
+		'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=${transaction.accountNumber}"> ${transaction.accountNumber} </a><br>' +
+		'Account Type: ${transaction.accountType} <br>' +
+		'Amount: ${transaction.amount} <br>' +
+		'Merchant Id: ${transaction.merchantId} <br>' +
+		'Merchant Type: ${transaction.merchantType} <br>' +
+		'Time of Transaction: ${transaction.transactionTimeStamp} <br><br>';
+		if(${transaction.fraudulent} == true){
+			previewDiv.innerHTML = previewDiv.innerHTML + 'Reason Flagged: ' + reasonFlagged;
+		}
+		chartDiv.className = "chart"
+		chartDiv.id = "chart" + ${transaction.transactionTimeStamp};
+		//chartDiv.onclick = function(){showPreview(this.id)};
+		//chartDiv.onmouseout = function(){closePreview(this.id)};
+							
+		iDiv.appendChild(messageDiv);
+		pDiv.appendChild(previewDiv);
+		pDiv.appendChild(chartDiv);
+		drawSDChartInitial(0, 0, ${transaction.amount}, 0, 0, ${transaction.distanceFromPrev}, ${transaction.transactionTimeStamp});
+	</c:forEach>
+  }
+  
   function drawSDChart(message){
       var chartValues = message;
       var amountMean = chartValues.data.amountMean;
@@ -366,6 +417,84 @@ div#account_container{
       $(function () {
 
           $('#chart' + chartValues.data.transactionTimeStamp).highcharts({
+              chart: {
+                  type: 'columnrange',
+                  inverted: true,
+                  width: 450,
+                  height: 250
+              },
+
+              title: {
+                  text: 'Customer Transaction Range'
+              },
+
+              subtitle: {
+                  text: ''
+              },
+
+              xAxis: {
+                  categories: ['Amount', 'Distance', 'Time']
+              },
+
+              yAxis: {
+                  title: {
+                      text: 'Range Deviation'
+                  }
+              },
+
+              tooltip: {
+                  valueSuffix: ''
+              },
+
+              plotOptions: {
+                  columnrange: {
+                      dataLabels: {
+                          enabled: true,
+                          formatter: function () {
+                              
+                          }
+                      }
+                  }
+              },
+
+              legend: {
+                  enabled: false
+              },
+				
+              series: [{
+                  name: 'Range',
+                  data: [
+                         
+                      [amountMean-amountDev, amountMean+amountDev],	
+                      [distanceMean-distanceDev, distanceMean+distanceDev],
+                      [timeMean-timeDev, timeMean+timeDev]
+                  	]
+              	},
+              	{
+                  type: 'scatter',
+           		  name: 'Actual',
+                  data: [amount, distancePrev, time]
+               	}
+              ]
+          });
+
+      });
+  }
+  
+  function drawSDChartInitial(customerAmountMean, customerAmountDev,  transactionAmount, customerDistanaceMean, customerDistanceDev distanceFromPrev, timeStamp){
+      var amountMean = 30;
+      var amountDev = 10;
+      var amount = transactionAmount;
+      var distanceMean = 10; 
+	  var distanceDev = 5;
+	  var distancePrev = distanceFromPrev;
+	  var timeMean = 60;
+	  var timeDev = 22;
+	  var time = 50;
+	  
+      $(function () {
+
+          $('#chart' + timeStamp).highcharts({
               chart: {
                   type: 'columnrange',
                   inverted: true,
@@ -493,7 +622,7 @@ div#account_container{
 </script>
 </head>
  
-<body onLoad="">
+<body onLoad="renderInitialInboxItems();">
 	<div class="header">
 		<div id="brandingLayout">
                 <a class="brandingContent">

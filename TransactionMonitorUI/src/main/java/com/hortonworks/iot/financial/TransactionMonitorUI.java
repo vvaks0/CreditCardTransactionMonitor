@@ -45,6 +45,15 @@ public class TransactionMonitorUI extends HttpServlet{
 	    private String requestType;
 	    private HTable customerAccountTable = null;
 	    private HTable transactionHistoryTable = null;
+	    private String zkHost = "sandbox.hortonworks.com";
+	    private String zkPort = "2181";
+	    private String zkHBasePath = "/hbase-unsecure";
+	    private String httpHost = "sandbox.hortonworks.com";
+	    private String httpListenPort = "8082";
+	    private String httpListenUri = "/contentListener";
+	    private String cometdHost = "sandbox.hortonworks.com";
+	    private String cometdListenPort = "8091";
+		private String defaultAccountNumber = "19123";
 	    
 	    @SuppressWarnings("deprecation")
 		public void init(ServletConfig config) throws ServletException {
@@ -54,10 +63,45 @@ public class TransactionMonitorUI extends HttpServlet{
 	        System.out.println("Calling Init method and setting request to Initial");
 	        requestType = "initial";
 	        //testPubSub();
-	    	
-	    	hbaseConfig.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
-			hbaseConfig.set("hbase.zookeeper.property.clientPort", "2181");
-			hbaseConfig.set("zookeeper.znode.parent", "/hbase-unsecure");
+	        
+	        Map<String, String> env = System.getenv();
+	        System.out.println("********************** ENV: " + env);
+	        if(env.get("ZK_HOST") != null){
+	        	this.zkHost = (String)env.get("ZK_HOST");
+	        }
+	        if(env.get("ZK_PORT") != null){
+	        	this.zkPort = (String)env.get("ZK_PORT");
+	        }
+	        if(env.get("ZK_HBASE_PATH") != null){
+	        	this.zkHBasePath = (String)env.get("ZK_HBASE_PATH");
+	        }
+	        if(env.get("COMETD_HOST") != null){
+	        	this.cometdHost = (String)env.get("COMETD_HOST");
+	        }
+	        if(env.get("COMETD_PORT") != null){
+	        	this.cometdListenPort = (String)env.get("COMETD_PORT");
+	        }
+	        if(env.get("HTTP_HOST") != null){
+	        	this.httpHost = (String)env.get("HTTP_HOST");
+	        }
+	        if(env.get("HTTP_PORT") != null){
+	        	this.httpListenPort = (String)env.get("HTTP_PORT");
+	        }
+	        if(env.get("HTTP_URI") != null){
+	        	this.httpListenUri = (String)env.get("HTTP_URI");
+	        }
+	        System.out.println("********************** Zookeeper Host: " + zkHost);
+	        System.out.println("********************** Zookeeper: " + zkPort);
+	        System.out.println("********************** Zookeeper Path: " + zkHBasePath);
+	        System.out.println("********************** Cometd Host: " + cometdHost);
+	        System.out.println("********************** Cometd Port: " + cometdListenPort);
+	        System.out.println("********************** Http Host: " + httpHost);
+	        System.out.println("********************** Http Port: " + httpListenPort);
+	        System.out.println("********************** Http Uri: " + httpListenUri);
+	        
+	    	hbaseConfig.set("hbase.zookeeper.quorum", zkHost);
+			hbaseConfig.set("hbase.zookeeper.property.clientPort", zkPort);
+			hbaseConfig.set("zookeeper.znode.parent", zkHBasePath);
 			
 			try {
 				customerAccountTable = new HTable(hbaseConfig, "CustomerAccount");
@@ -92,6 +136,12 @@ public class TransactionMonitorUI extends HttpServlet{
 	        System.out.println("Checking if Initial: " + requestType);
 	        if(requestType.equalsIgnoreCase("initial") || requestType.equalsIgnoreCase("customerOverview")){   
 	        	//request.getRequestDispatcher("CustomerOverview.jsp").forward(request, response);
+	        	accountDetails = getAccountDetails(defaultAccountNumber );
+	        	transactionHistory = getTransactionHistory();
+	        	request.setAttribute("cometdHost", cometdHost);
+	        	request.setAttribute("cometdPort", cometdListenPort);
+	        	request.setAttribute("accountDetails", accountDetails);
+	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.getRequestDispatcher("CustomerOverviewInbox.jsp").forward(request, response);
 	        } else if(requestType.equalsIgnoreCase("customerDetails")){   
 	        	accountNumber = request.getParameter("accountNumber");
@@ -104,6 +154,8 @@ public class TransactionMonitorUI extends HttpServlet{
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+				request.setAttribute("cometdHost", cometdHost);
+	        	request.setAttribute("cometdPort", cometdListenPort);
 	        	request.setAttribute("accountDetails", accountDetails);
 	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.setAttribute("merchantTypeShare", merchantTypeShare);
@@ -128,6 +180,8 @@ public class TransactionMonitorUI extends HttpServlet{
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+	        	request.setAttribute("cometdHost", cometdHost);
+	        	request.setAttribute("cometdPort", cometdListenPort);
 	        	request.setAttribute("accountDetails", accountDetails);
 	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.setAttribute("merchantTypeShare", merchantTypeShare);
@@ -349,7 +403,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    	Map<String, Integer> merchantTypeShare = new HashMap<String, Integer>();
 	    	Connection conn;
 	        Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-	        conn =  DriverManager.getConnection("jdbc:phoenix:sandbox.hortonworks.com:2181:/hbase-unsecure");
+	        conn =  DriverManager.getConnection("jdbc:phoenix:" + zkHost + ":" + zkPort + ":" + zkHBasePath);
 	        System.out.println("got connection");
 	        ResultSet rst = conn.createStatement().executeQuery("SELECT \"merchantType\", COUNT(\"merchantType\") as \"Count\" FROM \"TransactionHistory\" WHERE \"frauduent\" = 'false' GROUP BY \"merchantType\"");
 	        while (rst.next()) {
@@ -387,7 +441,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        transaction.setSource("analyst_action");
 	        transaction.setFraudulent("true");
 	        try{
-	        	URL url = new URL("http://sandbox.hortonworks.com:8082/contentListener");
+	        	URL url = new URL("http://" + httpHost + ":" + httpListenPort + httpListenUri);
 	    		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 	    		conn.setDoOutput(true);
 	    		conn.setRequestMethod("POST");
@@ -408,7 +462,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    }
 	    
 	    public void testPubSub() {
-	    	String pubSubUrl = "http://sandbox.hortonworks.com:8091/cometd";
+	    	String pubSubUrl = "http://" + cometdHost + ":" + cometdListenPort + "/cometd";
 	    	String fraudAlertChannel = "/fraudAlert";
 	    	HttpClient httpClient = new HttpClient();
 			try {

@@ -39,6 +39,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.LineageReferenceType;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
@@ -66,6 +67,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private Map<String,SpoutSpec> spouts; 
 	private Map topologyConf;
 	private Referenceable topology;
+	private Constants constants;
 	public static final String ANONYMOUS_OWNER = "anonymous";
 	public static final String HBASE_NAMESPACE_DEFAULT = "default";
 	public static final String CLUSTER_NAME_KEY = "atlas.cluster.name";
@@ -79,6 +81,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private AtlasClient atlasClient;
 	private String atlasVersion;
 	private final Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap<>();
+	private boolean skipReport = false;
 	
 	@SuppressWarnings("unused")
 	public void execute(Tuple tuple) {
@@ -91,7 +94,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		Referenceable incomingEvent = null;
 		Referenceable outgoingEvent = null;
 		String generatedUuid = null;
-		
+		if(!skipReport){
 		Iterator<StormProvenanceEvent> iterator = stormProvenance.iterator();
 		StormProvenanceEvent currentEvent = new StormProvenanceEvent();
 		while(iterator.hasNext()){
@@ -163,6 +166,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			register(atlasClient, topology);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
 		}
 	}
 	
@@ -256,10 +260,21 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		this.spouts = context.getRawTopology().get_spouts();	
-		this.atlasClient = new AtlasClient(DEFAULT_ATLAS_REST_ADDRESS);
+		this.constants = new Constants();
+		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
+		this.atlasClient = new AtlasClient(atlasUrl);
 		this.topologyConf = map;
-		this.atlasVersion = getAtlasVersion(atlasUrl + "/api/atlas/admin/version");
-		createAtlasDataModel();
+		try{
+			this.atlasVersion = getAtlasVersion(atlasUrl + "/api/atlas/admin/version");
+		}catch(Exception e){
+			atlasVersion = null;
+		}
+		if(atlasVersion != null)
+			createAtlasDataModel();
+		else{
+			System.out.println("********************* Atlas is not present, skip lineage reporting");
+			this.skipReport = true;
+		}
 	}
 	
 	private void createStormTopologyReferenceClass() throws AtlasException {

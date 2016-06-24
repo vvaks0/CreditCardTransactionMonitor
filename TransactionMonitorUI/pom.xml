@@ -172,18 +172,33 @@
 				<alias>transactionmonitorui</alias>
 				<name>${docker.repository.name}</name>
 				<build>
-					<from>java:8-jre</from>
+					<!-- <from>java:8-jre</from>  -->
+					<from>centos:7</from> 
 					<maintainer>vvaks</maintainer>
 					<assembly>
 						<descriptor>docker-assembly.xml</descriptor>
 					</assembly>
 					<ports>
 						<port>8090</port>
+						<port>8091</port>
+						<port>8092</port>
 					</ports>
+					
+					<env>
+						<JAVA_VERSION>8u31</JAVA_VERSION>
+						<BUILD_VERSION>b13</BUILD_VERSION>					
+					</env>
+					<runCmds>
+						<shell>yum install -y wget</shell>
+						<shell>wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/$JAVA_VERSION-$BUILD_VERSION/jdk-$JAVA_VERSION-linux-x64.rpm" -O /tmp/jdk-8-linux-x64.rpm</shell>
+						<shell>yum install -y /tmp/jdk-8-linux-x64.rpm</shell>
+						<shell>yum install -y iproute</shell>
+						<shell>yum install -y net-tools</shell>
+						<shell>chmod 757 -R /maven</shell>
+					</runCmds>
+					<workdir>/maven</workdir>
 					<cmd>
-						<shell>java -jar \
-							/maven/TransactionMonitorUI-jar-with-dependencies.jar server \
-							/maven/docker-config.yml</shell>
+						<shell>java -jar /maven/TransactionMonitorUI-jar-with-dependencies.jar server /maven/docker-config.yml</shell>
 					</cmd>
 				</build>
 			</image>

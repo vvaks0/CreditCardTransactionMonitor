@@ -21,10 +21,9 @@ import backtype.storm.tuple.Values;
 
 public class PublishTransaction extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
-	private String pubSubUrl = Constants.pubSubUrl;
-	private String incomingTransactionsChannel = Constants.incomingTransactionsChannel;
 	private BayeuxClient bayuexClient;
 	private OutputCollector collector;
+	private Constants constants;
 	
 	public void execute(Tuple tuple) {
 		EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("EnrichedTransaction");
@@ -91,7 +90,7 @@ public class PublishTransaction extends BaseRichBolt {
 		System.out.println(transaction.getDistanceDev());
 		System.out.println(transaction.getDistanceFromHome());
 		System.out.println(transaction.getDistanceFromPrev());
-		bayuexClient.getChannel(incomingTransactionsChannel).publish(data);
+		bayuexClient.getChannel(constants.getIncomingTransactionsChannel()).publish(data);
 		
 		collector.emit(tuple, new Values((EnrichedTransaction)transaction));
 		collector.ack(tuple);
@@ -99,7 +98,7 @@ public class PublishTransaction extends BaseRichBolt {
 
 	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		
+		this.constants = new Constants();
 		HttpClient httpClient = new HttpClient();
 		try {
 			httpClient.start();
@@ -112,7 +111,7 @@ public class PublishTransaction extends BaseRichBolt {
 		ClientTransport transport = new LongPollingTransport(options, httpClient);
 
 		// Create the BayeuxClient
-		bayuexClient = new BayeuxClient(pubSubUrl, transport);
+		bayuexClient = new BayeuxClient(constants.getPubSubUrl(), transport);
 		
 		bayuexClient.handshake();
 		boolean handshaken = bayuexClient.waitFor(3000, BayeuxClient.State.CONNECTED);

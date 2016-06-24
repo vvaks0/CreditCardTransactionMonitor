@@ -21,8 +21,7 @@ import backtype.storm.tuple.Values;
 
 public class PublishFraudAlert extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
-	private String pubSubUrl = Constants.pubSubUrl;
-	private String fraudChannel = Constants.fraudAlertChannel;
+	private Constants constants;
 	private BayeuxClient bayuexClient;
 	private OutputCollector collector;
 	
@@ -92,13 +91,14 @@ public class PublishFraudAlert extends BaseRichBolt {
 		System.out.println(transaction.getDistanceFromHome());
 		System.out.println(transaction.getDistanceFromPrev());
 		
-		bayuexClient.getChannel(fraudChannel).publish(data);
+		bayuexClient.getChannel(constants.getFraudAlertChannel()).publish(data);
 		
 		collector.emit(tuple, new Values((EnrichedTransaction)transaction));
 		collector.ack(tuple);
 	}
 
 	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
+		this.constants = new Constants();
 		this.collector = collector;
 		
 		HttpClient httpClient = new HttpClient();
@@ -113,8 +113,7 @@ public class PublishFraudAlert extends BaseRichBolt {
 		ClientTransport transport = new LongPollingTransport(options, httpClient);
 
 		// Create the BayeuxClient
-		bayuexClient = new BayeuxClient(pubSubUrl, transport);
-		
+		bayuexClient = new BayeuxClient(constants.getPubSubUrl(), transport);
 		bayuexClient.handshake();
 		boolean handshaken = bayuexClient.waitFor(3000, BayeuxClient.State.CONNECTED);
 		if (handshaken)

@@ -37,6 +37,7 @@ public class EnrichTransaction extends BaseRichBolt {
 	private String tableName = "CustomerAccount";
     private HTable table = null;
 	private OutputCollector collector;
+	private Constants constants;
 	
 	public void execute(Tuple tuple) {
 		IncomingTransaction incomingTransaction = (IncomingTransaction) tuple.getValueByField("IncomingTransaction");
@@ -135,12 +136,21 @@ public class EnrichTransaction extends BaseRichBolt {
 
 	@SuppressWarnings("deprecation")
 	public void prepare(Map arg0, TopologyContext context, OutputCollector collector) {
+		this.constants = new Constants();
 		this.componentId = context.getThisComponentId();
 		this.componentType = "BOLT";
+		
+		System.out.println("********************** Zookeeper Host: " + constants.getZkHost());
+        System.out.println("********************** Zookeeper Port: " + constants.getZkPort());
+        System.out.println("********************** Zookeeper ConnString: " + constants.getZkConnString());
+        System.out.println("********************** Zookeeper Kafka Path: " + constants.getZkKafkaPath());
+        System.out.println("********************** Zookeeper HBase Path: " + constants.getZkHBasePath());
+        System.out.println("********************** Cometd URI: " + constants.getPubSubUrl());
+		
 		Configuration config = HBaseConfiguration.create();
-		config.set("hbase.zookeeper.quorum", Constants.zkHost);
-		config.set("hbase.zookeeper.property.clientPort", Constants.zkPort);
-		config.set("zookeeper.znode.parent", "/hbase-unsecure");
+		config.set("hbase.zookeeper.quorum", constants.getZkHost());
+		config.set("hbase.zookeeper.property.clientPort", constants.getZkPort());
+		config.set("zookeeper.znode.parent", constants.getZkHBasePath());
 		
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
