@@ -77,9 +77,11 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	public static final String DEFAULT_APP_PORT_STR = "21000";
 	public static final String ATLAS_REST_ADDRESS_KEY = "atlas.rest.address";
 	public static final String DEFAULT_ATLAS_REST_ADDRESS = "http://localhost:21000";
+	public static final String DEFAULT_ADMIN_USER = "admin";
+	public static final String DEFAULT_ADMIN_PASS = "admin";
 	private String atlasUrl = DEFAULT_ATLAS_REST_ADDRESS;
 	private AtlasClient atlasClient;
-	private String atlasVersion;
+	private Double atlasVersion;
 	private final Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap<>();
 	private boolean skipReport = false;
 	
@@ -177,9 +179,16 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		String dslQuery = String.format("%s where %s = '%s'", typeName, "name", id);
 		System.out.println("********************* Atlas Version is: " + atlasVersion);
 		Referenceable eventReferenceable = null;
+		/*
 		if(atlasVersion.equalsIgnoreCase("0.5"))
 			eventReferenceable = getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
 		else if(atlasVersion.equalsIgnoreCase("0.6"))
+			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+		else
+			eventReferenceable = null;
+		*/
+		
+		if(atlasVersion >= 0.7)
 			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
 		else
 			eventReferenceable = null;
@@ -192,15 +201,22 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		//final String id = event.getEventKey();
 		 
 		String dslQuery = String.format("%s where %s = '%s'", typeName, "name", "count");
+		/*
 		if(atlasVersion.equalsIgnoreCase("0.5"))
 			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
 		else if(atlasVersion.equalsIgnoreCase("0.6"))
 			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
 		else
 			return null;
+		*/
+		
+		if(atlasVersion >= 0.7)
+			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+		else
+			return null;
 	}
 	
-	public Referenceable register(final AtlasClient atlasClient, final Referenceable referenceable) throws Exception {
+	public Referenceable register(final AtlasClient atlasClient, final Referenceable referenceable) throws AtlasServiceException {
         if (referenceable == null) {
             return null;
         }
@@ -211,14 +227,16 @@ public class AtlasLineageReporter extends BaseRichBolt {
         final String entityJSON = InstanceSerialization.toJson(referenceable, true);
         System.out.println("Submitting new entity " + referenceable.getTypeName() + ":" + entityJSON);
 
-        //final JSONArray guid = atlasClient.createEntity(entityJSON); client vesion 0.6
-        final JSONObject guid = atlasClient.createEntity(entityJSON);
+        //final JSONArray guid = atlasClient.createEntity(entityJSON); //client vesion 0.6
+        //final JSONObject guid = atlasClient.createEntity(entityJSON);
+        List<String> guid = atlasClient.createEntity(entityJSON);
         
-        //System.out.println("created instance for type " + typeName + ", guid: " + guid); client version 0.6
-        System.out.println("created instance for type " + typeName + ", guid: " + guid.getString("GUID"));
+        System.out.println("created instance for type " + typeName + ", guid: " + guid); //client version 0.6
+        //System.out.println("created instance for type " + typeName + ", guid: " + guid.getString("GUID"));
         
-        //return new Referenceable(guid.getString(0), referenceable.getTypeName(), null); client version 0.6
-        return new Referenceable(guid.getString("GUID"), referenceable.getTypeName(), null);
+        //return new Referenceable(guid.getString(0), referenceable.getTypeName(), null); //client version 0.6
+        //return new Referenceable(guid.getString("GUID"), referenceable.getTypeName(), null);
+        return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
         
     private Referenceable createTopologyInstance(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) throws Exception {
@@ -258,21 +276,23 @@ public class AtlasLineageReporter extends BaseRichBolt {
     }
     
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
+		String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
+		String[] atlasURL = {atlasUrl};
 		this.collector = collector;
 		this.spouts = context.getRawTopology().get_spouts();	
 		this.constants = new Constants();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
-		this.atlasClient = new AtlasClient(atlasUrl);
+		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
 		try{
-			this.atlasVersion = getAtlasVersion(atlasUrl + "/api/atlas/admin/version");
+			this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version"));
 		}catch(Exception e){
 			atlasVersion = null;
 		}
-		if(atlasVersion != null)
+		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7)
 			createAtlasDataModel();
 		else{
-			System.out.println("********************* Atlas is not present, skip lineage reporting");
+			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
 			this.skipReport = true;
 		}
 	}
@@ -283,8 +303,8 @@ public class AtlasLineageReporter extends BaseRichBolt {
                 new AttributeDefinition("nodes", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null)};
          
         HierarchicalTypeDefinition<ClassType> definition =
-                new HierarchicalTypeDefinition<>(ClassType.class, type,
-                	ImmutableList.of(AtlasClient.PROCESS_SUPER_TYPE), attributeDefinitions);
+                new HierarchicalTypeDefinition<>(ClassType.class, type,null,
+                	ImmutableSet.of(AtlasClient.PROCESS_SUPER_TYPE), attributeDefinitions);
         
         classTypeDefinitions.put(type, definition);
         System.out.println("Created definition for " + type);
@@ -296,8 +316,8 @@ public class AtlasLineageReporter extends BaseRichBolt {
                 new AttributeDefinition("event_key", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null)};
          
         HierarchicalTypeDefinition<ClassType> definition =
-                new HierarchicalTypeDefinition<>(ClassType.class, type,
-                	ImmutableList.of(AtlasClient.DATA_SET_SUPER_TYPE), attributeDefinitions);
+                new HierarchicalTypeDefinition<>(ClassType.class, type, null,
+                	ImmutableSet.of(AtlasClient.DATA_SET_SUPER_TYPE), attributeDefinitions);
         
         classTypeDefinitions.put(type, definition);
         System.out.println("Created definition for " + type);
@@ -487,8 +507,8 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	           throws Exception {
 		   System.out.println("****************************** Query String: " + dslQuery);
 		   
-	       //JSONArray results = atlasClient.searchByDSL(dslQuery);
-	       JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
+	       JSONArray results = atlasClient.searchByDSL(dslQuery);
+	       //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
 	       System.out.println("****************************** Query Results Count: " + results.length());
 	       if (results.length() == 0) {
 	           return null;
@@ -563,6 +583,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 								+ "{\"superTypes\":[\"Process\"],"
 								+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
 								+ "\"typeName\":\"storm_topology_reference\","
+								+ "\"typeDescription\": \"storm_topology_reference\","
 								+ "\"attributeDefinitions\": ["
 								+ "{\"name\": \"nodes\","
 								+ "\"dataTypeName\": \"string\","
@@ -578,6 +599,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 							   + "{\"superTypes\":[\"Process\"],"
 							   + "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
 							   + "\"typeName\": \"nifi_flow\","
+							   + "\"typeDescription\": \"nifi flow type\","
 							   + "\"attributeDefinitions\": ["
 							   + "{\"name\": \"nodes\","
 							   + "\"dataTypeName\": \"string\","
@@ -600,6 +622,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				   			+ "{\"superTypes\":[\"DataSet\"],"
 				   			+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
 				   			+ "\"typeName\":\"event\","
+				   			+ "\"typeDescription\": \"event type\","
 				   			+ "\"attributeDefinitions\":[{\"name\":\"event_key\","
 				   			+ "\"dataTypeName\":\"string\","
 				   			+ "\"multiplicity\":\"optional\","
