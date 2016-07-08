@@ -121,8 +121,6 @@ else
 	exit 1
 fi
 
-curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start Log Search"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH
-
 # Start Log Search
 LOGSEARCHSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH | grep '"state" :' | grep -Po '([A-Z]+)')
 if [ "$LOGSEARCHSTATUS" == INSTALLED ]; then
