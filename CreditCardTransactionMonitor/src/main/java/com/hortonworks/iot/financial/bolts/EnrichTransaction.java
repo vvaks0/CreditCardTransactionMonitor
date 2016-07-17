@@ -22,6 +22,7 @@ import com.hortonworks.iot.financial.events.IncomingTransaction;
 import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
+/*
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -29,15 +30,25 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+*/
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+
 
 public class EnrichTransaction extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
 	private String componentId;
 	private String componentType;
-	private String tableName = "CustomerAccount";
-    private HTable table = null;
+	//private String tableName = "CustomerAccount";
+   // private HTable table = null;
 	private OutputCollector collector;
 	private Constants constants;
+	private HTable customerAccountTable = null;
 	
 	public void execute(Tuple tuple) {
 		IncomingTransaction incomingTransaction = (IncomingTransaction) tuple.getValueByField("IncomingTransaction");
@@ -46,6 +57,7 @@ public class EnrichTransaction extends BaseRichBolt {
 		String actionType = "MODIFY";
 		List<StormProvenanceEvent> stormProvenance = (List<StormProvenanceEvent>)tuple.getValueByField("ProvenanceEvent");
 		String transactionKey = stormProvenance.get(0).getEventKey();
+		
 		StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
 	    stormProvenance.add(provenanceEvent);
 		
@@ -62,11 +74,13 @@ public class EnrichTransaction extends BaseRichBolt {
 		enrichedTransaction.setTransactionTimeStamp(incomingTransaction.getTransactionTimeStamp());
 		enrichedTransaction.setIpAddress(incomingTransaction.getIpAddress());
 		
+		System.out.println("********************** Enriching event: " + transactionKey);
 	    Get get = new Get(Bytes.toBytes(incomingTransaction.getAccountNumber()));
 	    Result result = null;
 		try {
-			result = table.get(get);
+			result = customerAccountTable.get(get);
 		} catch (IOException e) {
+			System.out.println("********************** Event: " + transactionKey + ": could not access HBase");
 			e.printStackTrace();
 		}
 		
@@ -154,16 +168,16 @@ public class EnrichTransaction extends BaseRichBolt {
 		
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
-			if (hbaseAdmin.tableExists(tableName)) {
-				table = new HTable(config, tableName);
+			if (hbaseAdmin.tableExists("CustomerAccount")) {
+				customerAccountTable = new HTable(config, "CustomerAccount");
 			}else{
-				HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
+				HTableDescriptor tableDescriptor = new HTableDescriptor("CustomerAccount");
 				HColumnDescriptor cfColumnFamily = new HColumnDescriptor("CustomerDetails".getBytes());
 				HColumnDescriptor cfIIColumnFamily = new HColumnDescriptor("AccountDetails".getBytes());
 				tableDescriptor.addFamily(cfColumnFamily);
 				tableDescriptor.addFamily(cfIIColumnFamily);
-				table = new HTable(config, tableName);
 				hbaseAdmin.createTable(tableDescriptor);
+				customerAccountTable = new HTable(config, "CustomerAccount");
 			}
 			hbaseAdmin.close();
 		} catch (IOException e) {
@@ -212,7 +226,7 @@ public class EnrichTransaction extends BaseRichBolt {
 		customer1000.add(Bytes.toBytes("AccountDetails"), Bytes.toBytes("grocAmtDev"), Bytes.toBytes("32.0403594"));
 											
 		try {
-			table.put(customer1000);
+			customerAccountTable.put(customer1000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

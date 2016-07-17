@@ -1,18 +1,18 @@
 package com.hortonworks.iot.financial.util;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.apache.storm.kafka.KeyValueScheme;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.hortonworks.iot.financial.events.IncomingTransaction;
-
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-import storm.kafka.KeyValueScheme;
 
 public class TransactionEventJSONScheme implements KeyValueScheme {
 		private static final long serialVersionUID = 1L;
@@ -40,8 +40,20 @@ public class TransactionEventJSONScheme implements KeyValueScheme {
 	        return new Fields("TransactionKey", "IncomingTransaction");
 	    }
 
-		@Override
+	    
 		public List<Object> deserialize(byte[] arg0) {
+			return null;
+		}
+
+		@Override
+		public List<Object> deserializeKeyAndValue(ByteBuffer arg0, ByteBuffer arg1) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public List<Object> deserialize(ByteBuffer arg0) {
+			// TODO Auto-generated method stub
 			return null;
 		}
 }

@@ -4,6 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
 import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
@@ -14,6 +20,12 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.kafka.BrokerHosts;
+import org.apache.storm.kafka.KafkaSpout;
+import org.apache.storm.kafka.KeyValueSchemeAsMultiScheme;
+import org.apache.storm.kafka.SpoutConfig;
+import org.apache.storm.kafka.ZkHosts;
+import org.apache.storm.spout.SchemeAsMultiScheme;
 
 import com.hortonworks.iot.financial.bolts.AtlasLineageReporter;
 import com.hortonworks.iot.financial.bolts.EnrichTransaction;
@@ -24,11 +36,20 @@ import com.hortonworks.iot.financial.bolts.ProcessCustomerTransactionValidation;
 import com.hortonworks.iot.financial.bolts.PublishAccountStatusUpdate;
 import com.hortonworks.iot.financial.bolts.PublishFraudAlert;
 import com.hortonworks.iot.financial.bolts.PublishTransaction;
-//import com.hortonworks.iot.financial.spout.KafkaSpout;
 import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.CustomerResponseEventJSONScheme;
 import com.hortonworks.iot.financial.util.TransactionEventJSONScheme;
 
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+
+/*
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
@@ -43,6 +64,7 @@ import storm.kafka.KafkaSpout;
 import storm.kafka.KeyValueSchemeAsMultiScheme;
 import storm.kafka.SpoutConfig;
 import storm.kafka.ZkHosts;
+*/
 
 public class CreditCardTransactionMonitorTopology {
 	 public static void main(String[] args) {
@@ -81,7 +103,7 @@ public class CreditCardTransactionMonitorTopology {
 	      SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, constants.getIncomingTransactionsTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
 	      incomingTransactionsKafkaSpoutConfig.scheme = new KeyValueSchemeAsMultiScheme(new TransactionEventJSONScheme());
 	      incomingTransactionsKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
-	      incomingTransactionsKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
+	      incomingTransactionsKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.EarliestTime();
 	      KafkaSpout incomingTransactionsKafkaSpout = new KafkaSpout(incomingTransactionsKafkaSpoutConfig); 
 	      
 	      //SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, Constants.customerTransactionValidationTopicName, "/" + Constants.customerTransactionValidationTopicName, UUID.randomUUID().toString());

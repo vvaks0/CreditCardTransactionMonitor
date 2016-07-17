@@ -7,6 +7,7 @@ import java.util.Map;
 import com.hortonworks.iot.financial.events.IncomingTransaction;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
+/*
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -14,6 +15,15 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+*/
+
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 
 public class InstantiateProvenance extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
@@ -23,12 +33,14 @@ public class InstantiateProvenance extends BaseRichBolt {
 	
 	public void execute(Tuple tuple) {
 		String transactionKey;
+		
 		if(tuple.getValueByField("TransactionKey") != null){
 			transactionKey = (String) tuple.getValueByField("TransactionKey");
 		}else{
 			transactionKey = "";
 		}
 		IncomingTransaction incomingTransaction = (IncomingTransaction) tuple.getValueByField("IncomingTransaction");
+		System.out.println("********************** Initializing Provenance for event: " + transactionKey);
 		
 		String actionType = "RECEIVE";
 		List<StormProvenanceEvent> stormProvenance = new ArrayList<StormProvenanceEvent>();

@@ -43,6 +43,11 @@ import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.LineageReferenceType;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
+import org.apache.storm.generated.SpoutSpec;
+
+import org.apache.commons.codec.binary.Base64;
+
+/*
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.task.OutputCollector;
@@ -52,12 +57,23 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
+*/
+
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 
@@ -285,7 +301,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
 		try{
-			this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version"));
+			this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
 		}catch(Exception e){
 			atlasVersion = null;
 		}
@@ -526,12 +542,13 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	       }
 	}
 	
-	private String getAtlasVersion(String uri){
+	private String getAtlasVersion(String uri, String[] basicAuth){
 		System.out.println("************************ Getting Atlas Version from: " + uri);
 		JSONObject json = null;
 		String versionValue = null;
         try{
-        	json = readJsonFromUrl(uri);
+        	//json = readJsonFromUrl(uri);
+        	json = readJSONFromUrlAuth(uri, basicAuth);
         	System.out.println("************************ Response from Atlas: " + json);
         	versionValue = json.getString("Version");
         } catch (Exception e) {
@@ -564,7 +581,28 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	    } finally {
 	      is.close();
 	    }
-	  }
+	}
+	
+	private JSONObject readJSONFromUrlAuth(String urlString, String[] basicAuth) throws IOException, JSONException {
+		String userPassString = basicAuth[0]+":"+basicAuth[1];
+		JSONObject json = null;
+		try {
+            URL url = new URL (urlString);
+            String encoding = "YWRtaW46YWRtaW4="; //Base64.encodeBase64String(userPassString.getBytes());
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.setRequestProperty  ("Authorization", "Basic " + encoding);
+            InputStream content = (InputStream)connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(content, Charset.forName("UTF-8")));
+  	      	String jsonText = readAll(rd);
+  	      	json = new JSONObject(jsonText);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
 	
 	private String readAll(Reader rd) throws IOException {
 	    StringBuilder sb = new StringBuilder();
@@ -632,23 +670,39 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				   			+ "\"reverseAttributeName\": null}]}]}";
 		
 		try {
-			if(atlasClient.getType("storm_topology_reference") == null){
-				atlasClient.createType(stormTopologyType);
-			}else{
-				System.out.println("Atlas Type: storm_topology_reference already exists");
-			}
-			if(atlasClient.getType("nifi_flow") == null){
-				atlasClient.createType(nifiFlowType);
-			}else{
-				System.out.println("Atlas Type: nifi_flow already exists");
-			}
-			if(atlasClient.getType("event") == null){
-				atlasClient.createType(eventType);
-			}else{
-				System.out.println("Atlas Type: event already exists");
-			}
+			atlasClient.getType("storm_topology_reference");
+			System.out.println("******************* Atlas Type: storm_topology_reference already exists");
 		} catch (AtlasServiceException e) {
-			e.printStackTrace();
+			try {
+				atlasClient.createType(stormTopologyType);
+				System.out.println("******************* Atlas Type: storm_topology_reference has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
+		}
+		
+		try {
+			atlasClient.getType("nifi_flow");
+			System.out.println("******************* Atlas Type: nifi_flow already exists");
+		} catch (AtlasServiceException e) {		
+			try {
+				atlasClient.createType(nifiFlowType);
+				System.out.println("******************* Atlas Type: nifi_flow has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
+		}
+			
+		try{
+			atlasClient.getType("event");
+			System.out.println("******************* Atlas Type: event already exists");
+		} catch (AtlasServiceException e) {
+			try {
+				atlasClient.createType(eventType);
+				System.out.println("******************* Atlas Type: event has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
 		}
 	}
 }
