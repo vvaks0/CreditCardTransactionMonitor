@@ -102,6 +102,7 @@ public class CreditCardTransactionMonitorTopology {
 	      //SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, Constants.incomingTransactionsTopicName, "/" + Constants.incomingTransactionsTopicName, UUID.randomUUID().toString());
 	      SpoutConfig incomingTransactionsKafkaSpoutConfig = new SpoutConfig(hosts, constants.getIncomingTransactionsTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
 	      incomingTransactionsKafkaSpoutConfig.scheme = new KeyValueSchemeAsMultiScheme(new TransactionEventJSONScheme());
+	      incomingTransactionsKafkaSpoutConfig.ignoreZkOffsets = true;
 	      incomingTransactionsKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
 	      incomingTransactionsKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.EarliestTime();
 	      KafkaSpout incomingTransactionsKafkaSpout = new KafkaSpout(incomingTransactionsKafkaSpoutConfig); 
@@ -109,6 +110,7 @@ public class CreditCardTransactionMonitorTopology {
 	      //SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, Constants.customerTransactionValidationTopicName, "/" + Constants.customerTransactionValidationTopicName, UUID.randomUUID().toString());
 	      SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, constants.getCustomerTransactionValidationTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
 	      customerTransactionValidationKafkaSpoutConfig.scheme = new SchemeAsMultiScheme(new CustomerResponseEventJSONScheme());
+	      customerTransactionValidationKafkaSpoutConfig.ignoreZkOffsets = true;
 	      customerTransactionValidationKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
 	      customerTransactionValidationKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
 	      KafkaSpout customerTransactionValidationKafkaSpout = new KafkaSpout(customerTransactionValidationKafkaSpoutConfig);

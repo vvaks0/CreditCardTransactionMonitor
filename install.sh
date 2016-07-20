@@ -178,10 +178,10 @@ wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.re
 yum install -y apache-maven
 
 # If Sandbox >= 2.5 Install Atlas 0.7 jars to Local Maven Repo, If not, fail
-mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-common-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-common -Dversion=0.7-incubating -Dpackaging=jar
-mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-typesystem-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-typesystem -Dversion=0.7-incubating -Dpackaging=jar
-mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-client-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-client -Dversion=0.7-incubating -Dpackaging=jar
-mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-notification-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-notification -Dversion=0.7-incubating -Dpackaging=jar
+#mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-common-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-common -Dversion=0.7-incubating -Dpackaging=jar
+#mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-typesystem-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-typesystem -Dversion=0.7-incubating -Dpackaging=jar
+#mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-client-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-client -Dversion=0.7-incubating -Dpackaging=jar
+#mvn install:install-file -Dfile=/usr/hdp/current/storm-client/extlib/atlas-notification-0.7.0.2.5.0.0-817.jar -DgroupId=org.apache.atlas -DartifactId=atlas-notification -Dversion=0.7-incubating -Dpackaging=jar
 
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
 # Build from source

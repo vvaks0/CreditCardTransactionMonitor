@@ -7,18 +7,8 @@
     <dependency>
 		<groupId>org.apache.storm</groupId>
 		<artifactId>storm-core</artifactId>
-		<version>1.0.1</version>
+		<version>1.0.1.2.5.186</version>
 		<scope>provided</scope>
-		<exclusions>
-			<exclusion> 
-    			<groupId>org.slf4j</groupId>
-    			<artifactId>slf4j-log4j12</artifactId>
-  			</exclusion>
-  			<exclusion> 
-    			<groupId>log4j</groupId>
-    			<artifactId>log4j</artifactId>
-  			</exclusion>
-  		</exclusions>
     </dependency>
     <dependency>
 		<groupId>org.apache.zookeeper</groupId>
@@ -63,11 +53,15 @@
     			<groupId>log4j</groupId>
     			<artifactId>log4j</artifactId>
   			</exclusion>
+  			<exclusion> 
+    			<groupId>org.apache.curator</groupId>
+    			<artifactId>curator-framework</artifactId>
+  			</exclusion>
   		</exclusions>
 	</dependency>
 	<dependency>
 	<groupId>org.apache.kafka</groupId>
-	<artifactId>kafka_2.11</artifactId>
+	<artifactId>kafka_2.10</artifactId>
 	<version>0.8.2.2</version>
 	<exclusions>
                 <exclusion>
