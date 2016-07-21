@@ -43,11 +43,8 @@ import com.hortonworks.iot.financial.util.Constants;
 import com.hortonworks.iot.financial.util.LineageReferenceType;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
-import org.apache.storm.generated.SpoutSpec;
-
 import org.apache.commons.codec.binary.Base64;
 
-/*
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.task.OutputCollector;
@@ -57,8 +54,8 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
-*/
 
+/*
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -67,6 +64,8 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.generated.SpoutSpec;
+*/
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

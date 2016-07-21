@@ -5,9 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.apache.storm.spout.Scheme;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -15,13 +12,16 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.hortonworks.iot.financial.events.CustomerResponse;
 import com.hortonworks.iot.financial.events.IncomingTransaction;
 
-
-
-/*
 import backtype.storm.spout.Scheme;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+
+/*
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 */
+
 public class CustomerResponseEventJSONScheme implements Scheme {
 		private static final long serialVersionUID = 1L;
 		private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -46,10 +46,4 @@ public class CustomerResponseEventJSONScheme implements Scheme {
 	    public Fields getOutputFields() {
 	        return new Fields("CustomerResponse");
 	    }
-
-		@Override
-		public List<Object> deserialize(ByteBuffer arg0) {
-			// TODO Auto-generated method stub
-			return null;
-		}
 }
