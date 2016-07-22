@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Arrays;
@@ -297,15 +298,20 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.spouts = context.getRawTopology().get_spouts();	
 		this.constants = new Constants();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
+		Properties props = System.getProperties();
+        try{
+			props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
+        }catch(Exception e){
+        	props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
+        }
 		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
-		
+		try{
+			this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
+		}catch(Exception e){
+			atlasVersion = null;
+		}
 		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
-			try{
-				this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
-			}catch(Exception e){
-				atlasVersion = null;
-			}
 			createAtlasDataModel();
 		}else{
 			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
