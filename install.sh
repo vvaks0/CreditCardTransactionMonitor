@@ -91,50 +91,55 @@ until [ "$LOOPESCAPE" == true ]; do
         sleep 2
 done
 
-echo "*********************************Creating NIFI service..."
-# Create NIFI service
-curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI
+NIFISTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep '"status" : ' | grep -Po '([0-9]+)')
+if [ "$NIFISTATUS" == 404 ]; then
+	echo "*********************************Creating NIFI service..."
+	# Create NIFI service
+	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI
 
-sleep 2
-echo "*********************************Adding NIFI MASTER component..."
-# Add NIFI Master component to service
-curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_MASTER
+	sleep 2
+	echo "*********************************Adding NIFI MASTER component..."
+	# Add NIFI Master component to service
+	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_MASTER
 
-sleep 2
-echo "*********************************Creating NIFI configuration..."
+	sleep 2
+	echo "*********************************Creating NIFI configuration..."
 
-# Create and apply configuration
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-ambari-config Nifi/config/nifi-ambari-config.json
-sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-bootstrap-env Nifi/config/nifi-bootstrap-env.json
-sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-flow-env Nifi/config/nifi-flow-env.json
-sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-logback-env Nifi/config/nifi-logback-env.json
-sleep 2
-/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-properties-env Nifi/config/nifi-properties-env.json
+	# Create and apply configuration
+	/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-ambari-config Nifi/config/nifi-ambari-config.json
+	sleep 2
+	/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-bootstrap-env Nifi/config/nifi-bootstrap-env.json
+	sleep 2
+	/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-flow-env Nifi/config/nifi-flow-env.json
+	sleep 2
+	/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-logback-env Nifi/config/nifi-logback-env.json
+	sleep 2
+	/var/lib/ambari-server/resources/scripts/configs.sh set sandbox.hortonworks.com $CLUSTER_NAME nifi-properties-env Nifi/config/nifi-properties-env.json
 
-sleep 2
-echo "*********************************Adding NIFI MASTER role to Host..."
-# Add NIFI Master role to Sandbox host
-curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$HOSTNAME/host_components/NIFI_MASTER
+	sleep 2
+	echo "*********************************Adding NIFI MASTER role to Host..."
+	# Add NIFI Master role to Sandbox host
+	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$HOSTNAME/host_components/NIFI_MASTER
 
-sleep 2
-echo "*********************************Installing NIFI Service"
-# Install NIFI Service
-TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-echo "*********************************AMBARI TaskID " $TASKID
-sleep 2
-LOOPESCAPE="false"
-until [ "$LOOPESCAPE" == true ]; do
+	sleep 2
+	echo "*********************************Installing NIFI Service"
+	# Install NIFI Service
+	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+	echo "*********************************AMBARI TaskID " $TASKID
+	sleep 2
+	LOOPESCAPE="false"
+	until [ "$LOOPESCAPE" == true ]; do
         TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
         if [ "$TASKSTATUS" == COMPLETED ]; then
                 LOOPESCAPE="true"
         fi
         echo "*********************************Task Status" $TASKSTATUS
         sleep 2
-done
-echo "*********************************NIFI Service Installed..."
+	done
+	echo "*********************************NIFI Service Installed..."
+else
+	echo "*********************************NIFI Service Already Installed..."
+fi
 
 sleep 2
 echo "*********************************Starting NIFI Service..."
@@ -144,25 +149,25 @@ echo "*********************************AMBARI TaskID " $TASKID
 sleep 2
 LOOPESCAPE="false"
 until [ "$LOOPESCAPE" == true ]; do
-        TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-        if [ "$TASKSTATUS" == COMPLETED ]; then
-                LOOPESCAPE="true"
-        fi
-        echo "*********************************Task Status" $TASKSTATUS
-        sleep 2
+    TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+    if [ "$TASKSTATUS" == COMPLETED ]; then
+            LOOPESCAPE="true"
+    fi
+    echo "*********************************Task Status" $TASKSTATUS
+    sleep 2
 done
 echo "*********************************NIFI Service Started..."
 LOOPESCAPE="false"
 until [ "$LOOPESCAPE" == true ]; do
-        TASKSTATUS=$(curl -u admin:admin -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller | grep -Po 'OK')
-        if [ "$TASKSTATUS" == OK ]; then
-                LOOPESCAPE="true"
-        else
-                TASKSTATUS="PENDING"
-        fi
-		echo "*********************************Waiting for NIFI Servlet..."
-        echo "*********************************NIFI Servlet Status... " $TASKSTATUS
-        sleep 2
+    TASKSTATUS=$(curl -u admin:admin -i -X GET http://sandbox.hortonworks.com:9090/nifi-api/controller | grep -Po 'OK')
+    if [ "$TASKSTATUS" == OK ]; then
+        LOOPESCAPE="true"
+    else
+        TASKSTATUS="PENDING"
+    fi
+	echo "*********************************Waiting for NIFI Servlet..."
+    echo "*********************************NIFI Servlet Status... " $TASKSTATUS
+    sleep 2
 done
 
 echo "*********************************Importing NIFI Template..."
