@@ -299,14 +299,15 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
 		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
-		try{
-			this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
-		}catch(Exception e){
-			atlasVersion = null;
-		}
-		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7)
+		
+		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
+			try{
+				this.atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
+			}catch(Exception e){
+				atlasVersion = null;
+			}
 			createAtlasDataModel();
-		else{
+		}else{
 			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
 			this.skipReport = true;
 		}
