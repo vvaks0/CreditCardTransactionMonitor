@@ -121,33 +121,38 @@ else
 	exit 1
 fi
 
-# Start Log Search
-LOGSEARCHSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH | grep '"state" :' | grep -Po '([A-Z]+)')
-if [ "$LOGSEARCHSTATUS" == INSTALLED ]; then
-	echo "Starting Log Search Service..."
-	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start Log Search"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH | grep "id" | grep -Po '([0-9]+)')
-	echo "LOGSEARCHSTATUS TaskId " $TASKID
-	sleep 2
-
-	LOOPESCAPE="false"
-
-	until [ "$LOOPESCAPE" == true ]; do
-
-		TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-		if [ "$TASKSTATUS" == COMPLETED ]; then
-			LOOPESCAPE="true"
- 		fi
-		
-		echo "Task Status" $TASKSTATUS
+# Start LogSearch
+LOGSEARCHSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/Sandbox/services/LOGSEARCH | grep '"status" : ' | grep -Po '([0-9]+)')
+if [ !"$LOGSEARCHSTATUS" == 404 ]; then
+	LOGSEARCHSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH | grep '"state" :' | grep -Po '([A-Z]+)')
+	if [ "$LOGSEARCHSTATUS" == INSTALLED ]; then
+		echo "Starting Log Search Service..."
+		TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Start Log Search"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/services/LOGSEARCH | grep "id" | grep -Po '([0-9]+)')
+		echo "LOGSEARCHSTATUS TaskId " $TASKID
 		sleep 2
-	done
-	echo "Log Search Service Started..."
 
-elif [ "$LOGSEARCHSTATUS" == STARTED ]; then
-	echo "Log Search Service Started..."
+		LOOPESCAPE="false"
+
+		until [ "$LOOPESCAPE" == true ]; do
+
+			TASKSTATUS=$(curl -u admin:admin -X GET http://sandbox.hortonworks.com:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+			if [ "$TASKSTATUS" == COMPLETED ]; then
+				LOOPESCAPE="true"
+ 			fi
+		
+			echo "Task Status" $TASKSTATUS
+			sleep 2
+		done
+		echo "Log Search Service Started..."
+
+	elif [ "$LOGSEARCHSTATUS" == STARTED ]; then
+		echo "Log Search Service Started..."
+	else
+		echo "Log Search Service in a transition state. Wait for process to complete and then run the install script again."
+		exit 1
+	fi
 else
-	echo "Log Search Service in a transition state. Wait for process to complete and then run the install script again."
-	exit 1
+	echo "Log Search Service does not exist, skipping..."
 fi
 
 # Start Atlas

@@ -4,11 +4,14 @@ HOSTNAME=$(hostname)
 VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
 INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
 echo "*********************************SANDBOX VERSION IS $VERSION" 
-if [ "$INTVERSION" -lt 24 ]; then	
-	echo "*********************************Downloading NIFI..." 
+if [ "$INTVERSION" -gt 22 ]; then	
+	echo "*********************************Removing Current Version of NIFI..." 
+	rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
+
+	echo "*********************************Downloading Newest Version of NIFI..." 
 	sudo git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
 	ambari-server restart
-else
+#else
 	echo "*********************************Install Zeppelin Notebook"
 	cp -rvf Zeppelin/notebook/* /usr/hdp/current/zeppelin-server/lib/notebook/  
 fi
