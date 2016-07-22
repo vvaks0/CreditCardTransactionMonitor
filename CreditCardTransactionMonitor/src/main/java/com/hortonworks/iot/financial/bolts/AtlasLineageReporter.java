@@ -299,11 +299,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.constants = new Constants();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
 		Properties props = System.getProperties();
-        try{
-			props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
-        }catch(Exception e){
-        	props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
-        }
+        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
 		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
 		try{
