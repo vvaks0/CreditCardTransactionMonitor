@@ -50,13 +50,14 @@ public class ProcessCustomerTransactionValidation extends BaseRichBolt {
 		CustomerResponse customerResponse = (CustomerResponse) tuple.getValueByField("CustomerResponse");
 		updateCustomerAccountStatus(customerResponse.getAccountNumber(), customerResponse.getTransactionId(), Boolean.valueOf(customerResponse.getFraudulent()));
 		updateTranactionStatus(customerResponse.getTransactionId(), Boolean.valueOf(customerResponse.getFraudulent()));
-		System.out.println("Update Account/Transaction Status: " + customerResponse.getAccountNumber() + " Fraudulent Flag: " + Boolean.valueOf(customerResponse.getFraudulent()));
+		System.out.println("********************* Update Account/Transaction Status: " + customerResponse.getAccountNumber() + " Fraudulent Flag: " + Boolean.valueOf(customerResponse.getFraudulent()));
 		
 		collector.emit(tuple, new Values((CustomerResponse) customerResponse));
 		collector.ack(tuple);
 	}
 	
 	public void updateCustomerAccountStatus(String accountNumber, String transactionId, boolean fraudulent){
+		System.out.println("********************* Updating Accout Status based on Customer feedback: " + accountNumber + " : " + transactionId + " : " + fraudulent);
 		Put customerAccount = new Put(Bytes.toBytes(accountNumber));
 		
 		if(fraudulent){
@@ -96,25 +97,35 @@ public class ProcessCustomerTransactionValidation extends BaseRichBolt {
 		config.set("hbase.zookeeper.property.clientPort", constants.getZkPort());
 		config.set("zookeeper.znode.parent", constants.getZkHBasePath());
 		
+		System.out.println("********************* Preparing " + customerAccountTableName + " Table ....");
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
 			
-			while(!hbaseAdmin.tableExists(customerAccountTableName)){
-				if(hbaseAdmin.tableExists(customerAccountTableName)) {	
-					customerAccountTable = new HTable(config, customerAccountTableName);
-				}else{
-					System.out.println("ProcessCustomerValidationBolt Prepare() is waiting for " + customerAccountTableName + " table to be created....");
+			System.out.println("********************* CustomerAccount Table Exists? : " + hbaseAdmin.tableExists(customerAccountTableName));
+			if(hbaseAdmin.tableExists(customerAccountTableName)) {	
+				customerAccountTable = new HTable(config, customerAccountTableName);
+				System.out.println("********************* ProcessCustomerValidationBolt Prepare() has aquired " + customerAccountTableName + " table.");
+			}else{
+				while(!hbaseAdmin.tableExists(customerAccountTableName)){
+					System.out.println("********************* ProcessCustomerValidationBolt Prepare() is waiting for " + customerAccountTableName + " table to be created....");
 					Thread.sleep(5000);
 				}
+				customerAccountTable = new HTable(config, customerAccountTableName);
+				System.out.println("********************* ProcessCustomerValidationBolt Prepare() has aquired " + customerAccountTableName + " table.");
 			}
 			
-			while(!hbaseAdmin.tableExists(transactionHistoryTableName)) {
-				if(hbaseAdmin.tableExists(transactionHistoryTableName)) {
-					transactionHistoryTable = new HTable(config, transactionHistoryTableName);	
-				}else{
-					System.out.println("ProcessCustomerValidationBolt Prepare() is waiting for " + transactionHistoryTableName + " table to be created....");
+			System.out.println("********************* Preparing " + transactionHistoryTableName + "Table ....");
+			System.out.println("********************* TransactionHistory Table Exists? : " + hbaseAdmin.tableExists(transactionHistoryTableName));
+			if(hbaseAdmin.tableExists(transactionHistoryTableName)) {
+				transactionHistoryTable = new HTable(config, transactionHistoryTableName);
+				System.out.println("********************* ProcessCustomerValidationBolt Prepare() has aquired " + transactionHistoryTableName + " table.");
+			}else{
+				while(!hbaseAdmin.tableExists(transactionHistoryTableName)) {
+					System.out.println("********************* ProcessCustomerValidationBolt Prepare() is waiting for " + transactionHistoryTableName + " table to be created....");
 					Thread.sleep(5000);
 				}
+				transactionHistoryTable = new HTable(config, transactionHistoryTableName);
+				System.out.println("********************* ProcessCustomerValidationBolt Prepare() has aquired " + transactionHistoryTableName + " table.");
 			}
 			hbaseAdmin.close();
 		} catch (IOException e) {
