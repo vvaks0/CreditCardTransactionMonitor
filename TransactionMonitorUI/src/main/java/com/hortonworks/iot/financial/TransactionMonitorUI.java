@@ -54,6 +54,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    private String cometdHost = "sandbox.hortonworks.com";
 	    private String cometdListenPort = "8091";
 		private String defaultAccountNumber = "19123";
+		private String mapAPIKey = "NO_API_KEY_FOUND";
 	    
 	    @SuppressWarnings("deprecation")
 		public void init(ServletConfig config) throws ServletException {
@@ -90,6 +91,9 @@ public class TransactionMonitorUI extends HttpServlet{
 	        if(env.get("HTTP_URI") != null){
 	        	this.httpListenUri = (String)env.get("HTTP_URI");
 	        }
+	        if(env.get("MAP_API_KEY") != null){
+	        	this.mapAPIKey  = (String)env.get("MAP_API_KEY");
+	        }
 	        System.out.println("********************** Zookeeper Host: " + zkHost);
 	        System.out.println("********************** Zookeeper: " + zkPort);
 	        System.out.println("********************** Zookeeper Path: " + zkHBasePath);
@@ -98,6 +102,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        System.out.println("********************** Http Host: " + httpHost);
 	        System.out.println("********************** Http Port: " + httpListenPort);
 	        System.out.println("********************** Http Uri: " + httpListenUri);
+	        System.out.println("********************** Map Api Key: " + mapAPIKey);
 	        
 	    	hbaseConfig.set("hbase.zookeeper.quorum", zkHost);
 			hbaseConfig.set("hbase.zookeeper.property.clientPort", zkPort);
@@ -140,6 +145,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        	transactionHistory = getTransactionHistory();
 	        	request.setAttribute("cometdHost", cometdHost);
 	        	request.setAttribute("cometdPort", cometdListenPort);
+	        	request.setAttribute("mapAPIKey", mapAPIKey);
 	        	request.setAttribute("accountDetails", accountDetails);
 	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.getRequestDispatcher("CustomerOverviewInbox.jsp").forward(request, response);
@@ -156,6 +162,7 @@ public class TransactionMonitorUI extends HttpServlet{
 				}
 				request.setAttribute("cometdHost", cometdHost);
 	        	request.setAttribute("cometdPort", cometdListenPort);
+	        	request.setAttribute("mapAPIKey", mapAPIKey);
 	        	request.setAttribute("accountDetails", accountDetails);
 	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.setAttribute("merchantTypeShare", merchantTypeShare);
@@ -182,6 +189,7 @@ public class TransactionMonitorUI extends HttpServlet{
 				}
 	        	request.setAttribute("cometdHost", cometdHost);
 	        	request.setAttribute("cometdPort", cometdListenPort);
+	        	request.setAttribute("mapAPIKey", mapAPIKey);
 	        	request.setAttribute("accountDetails", accountDetails);
 	        	request.setAttribute("transactionHistory", transactionHistory);
 	        	request.setAttribute("merchantTypeShare", merchantTypeShare);

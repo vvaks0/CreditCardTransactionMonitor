@@ -194,6 +194,7 @@ div#customer_container{
 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=${mapAPIKey}"></script> 
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/highcharts-more.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
@@ -207,7 +208,7 @@ div#customer_container{
   	var table;
   	var tableData;
   	var cometdHost = "${cometdHost}";
-  	var cometdPort = ${cometdPort};
+  	var cometdPort = "${cometdPort}";
   	var pubSubUrl = "http://" + cometdHost + ":" + cometdPort + "/cometd";
   	var alertChannel = "/fraudAlert";
     var incomingTransactionsChannel = "/incomingTransactions";

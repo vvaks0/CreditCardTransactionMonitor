@@ -274,7 +274,7 @@ div#account_container{
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/highcharts-more.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=${mapAPIKey}"></script>
 <script src="//ajax.googleapis.com/ajax/libs/dojo/1.7.8/dojo/dojo.js"></script>
 <script type="text/javascript">
   dojo.require("dojo.io.script");
@@ -363,7 +363,7 @@ div#account_container{
 		var chartDiv = document.createElement("div");
 		
 		messageDiv.className = "message";
-		messageDiv.id = ${transaction.transactionTimeStamp} + '1000';
+		messageDiv.id = ${transaction.transactionTimeStamp};
 		messageDiv.onclick = function(){showPreview(this.id)};
 		messageDiv.ondblclick = function(){location.href='CustomerOverview?requestType=customerDetails&accountNumber=' + ${transaction.accountNumber}};
 		messageDiv.onmouseout = function(){closePreview(this.id)};
@@ -481,7 +481,7 @@ div#account_container{
       });
   }
   
-  function drawSDChartInitial(customerAmountMean, customerAmountDev,  transactionAmount, customerDistanaceMean, customerDistanceDev distanceFromPrev, timeStamp){
+  function drawSDChartInitial(customerAmountMean, customerAmountDev,  transactionAmount, customerDistanaceMean, customerDistanceDev, distanceFromPrev, timeStamp){
       var amountMean = 30;
       var amountDev = 10;
       var amount = transactionAmount;
