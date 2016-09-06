@@ -482,11 +482,11 @@ div#account_container{
   }
   
   function drawSDChartInitial(customerAmountMean, customerAmountDev,  transactionAmount, customerDistanaceMean, customerDistanceDev, distanceFromPrev, timeStamp){
-      var amountMean = 30;
-      var amountDev = 10;
+      var amountMean = customerAmountMean;
+      var amountDev = customerAmountDev;
       var amount = transactionAmount;
-      var distanceMean = 10; 
-	  var distanceDev = 5;
+      var distanceMean = customerDistanaceMean; 
+	  var distanceDev = customerDistanceDev;
 	  var distancePrev = distanceFromPrev;
 	  var timeMean = 60;
 	  var timeDev = 22;
@@ -622,7 +622,8 @@ div#account_container{
 </script>
 </head>
  
-<body onLoad="renderInitialInboxItems();">
+<!-- <body onLoad="renderInitialInboxItems();">  -->
+<body onLoad="">
 	<div class="header">
 		<div id="brandingLayout">
                 <a class="brandingContent">
