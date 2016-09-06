@@ -165,6 +165,7 @@ public class TransactionSimulator implements Runnable {
                 }   
             }
         }
+        run();
     }
     
     public void generateLegitimateTransaction(Merchant merchant){
