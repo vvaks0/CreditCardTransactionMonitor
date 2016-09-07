@@ -10,7 +10,7 @@
             },
 	    "COMETD": {
                 "cometd.commandPath": "/usr/bin/docker",
-                "cometd.options":"-d --net=host",
+                "cometd.options":"-d -e MAP_API_KEY= --net=host",
                 "cometd.statusCommand":"docker inspect -f {{.State.Running}} ${CONTAINER_ID} | grep true"
             }
     }
