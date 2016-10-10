@@ -93,7 +93,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	public static final String SYSTEM_PROPERTY_APP_PORT = "atlas.app.port";
 	public static final String DEFAULT_APP_PORT_STR = "21000";
 	public static final String ATLAS_REST_ADDRESS_KEY = "atlas.rest.address";
-	public static final String DEFAULT_ATLAS_REST_ADDRESS = "http://localhost:21000";
+	public static final String DEFAULT_ATLAS_REST_ADDRESS = "http://sandbox.hortonworks.com:21000";
 	public static final String DEFAULT_ADMIN_USER = "admin";
 	public static final String DEFAULT_ADMIN_PASS = "admin";
 	private String atlasUrl = DEFAULT_ATLAS_REST_ADDRESS;
@@ -258,7 +258,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
         return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
         
-    private Referenceable createTopologyInstance(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) throws Exception {
+    private Referenceable createTopologyInstanceOld(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) throws Exception {
         String jsonClass = "org.apache.atlas.typesystem.json.InstanceSerialization$_Id";
         Integer version = 0;
         String typeName = "DataSet";
@@ -286,7 +286,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
     	return topologyReferenceable;
     }
     
-    private Referenceable createTopologyInstanceNew(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
+    private Referenceable createTopologyInstance(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
         List<Id> sourceList = new ArrayList<Id>();
         List<Id> targetList = new ArrayList<Id>();
         sourceList.add(inputEvent.getId());
@@ -314,14 +314,15 @@ public class AtlasLineageReporter extends BaseRichBolt {
     }
     
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
-		String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
-		String[] atlasURL = {atlasUrl};
+		Properties props = System.getProperties();
+        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
 		this.collector = collector;
 		this.spouts = context.getRawTopology().get_spouts();	
 		this.constants = new Constants();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
-		Properties props = System.getProperties();
-        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
+		String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
+		String[] atlasURL = {atlasUrl};
+		
 		this.atlasClient = new AtlasClient(atlasURL, basicAuth);
 		this.topologyConf = map;
 		try{
@@ -337,37 +338,303 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			this.skipReport = true;
 		}
 	}
-	/*
-	private void createStormTopologyReferenceClass() throws AtlasException {
-		String type = "storm_topology_reference";
-		AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
-                new AttributeDefinition("nodes", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null)};
-         
-        HierarchicalTypeDefinition<ClassType> definition =
-                new HierarchicalTypeDefinition<>(ClassType.class, type,null,
-                	ImmutableSet.of(AtlasClient.PROCESS_SUPER_TYPE), attributeDefinitions);
-        
-        classTypeDefinitions.put(type, definition);
-        System.out.println("Created definition for " + type);
-    }
-	
-	private void createEventClass() throws AtlasException {
-        String type = "event";
-		AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
-                new AttributeDefinition("event_key", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null)};
-         
-        HierarchicalTypeDefinition<ClassType> definition =
-                new HierarchicalTypeDefinition<>(ClassType.class, type, null,
-                	ImmutableSet.of(AtlasClient.DATA_SET_SUPER_TYPE), attributeDefinitions);
-        
-        classTypeDefinitions.put(type, definition);
-        System.out.println("Created definition for " + type);
-    }*/
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("ProvenanceEvent"));
 	}
+	
+	/*
+	//Use this version of method when Flow File UUID has been assigned
+    private Referenceable createEventOld(StormProvenanceEvent event) {
+        final String flowFileUuid = event.getEventKey();
+        
+        // TODO populate processor properties and determine real parent group, assuming root group for now
+        final Referenceable processor = new Referenceable("event");
+        processor.set("name", flowFileUuid);
+        processor.set("event_key", "accountNumber");
+        processor.set("description", flowFileUuid);
+        return processor;
+    }
+    
+    //Use this version of method when incoming event is ingested and Flow File UUID has not yet been assigned
+    private Referenceable createEventOld(StormProvenanceEvent event, String uuid) {
+        final Referenceable processor = new Referenceable("event");
+        processor.set("name", uuid);
+        processor.set("event_key", "accountNumber");
+        processor.set("description", uuid);
+        return processor;
+    }*/
+    
+    private Referenceable createEvent(StormProvenanceEvent event) {
+        String qualifiedName = "SEND_" + event.getEventKey();
+    	Referenceable processor = new Referenceable("event");
+        
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
+        processor.set("name", qualifiedName);
+        processor.set("flowFileId", event.getEventKey());
+        processor.set("event_key", "accountNumber");
+        processor.set("description", "storm event");
+        return processor;
+    }
+    
+    private Referenceable createEvent(StormProvenanceEvent event, String uuid) {
+        String qualifiedName = "SEND_" + uuid;
+    	Referenceable processor = new Referenceable("event");
+        
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
+        processor.set("name", qualifiedName);
+        processor.set("flowFileId", uuid);
+        processor.set("event_key", "accountNumber");
+        processor.set("description", "storm event");
+        return processor;
+    }
+	
+	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
+	           throws Exception {
+		   System.out.println("****************************** Query String: " + dslQuery);
+		   
+	       JSONArray results = atlasClient.searchByDSL(dslQuery);
+	       //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
+	       System.out.println("****************************** Query Results Count: " + results.length());
+	       if (results.length() == 0) {
+	           return null;
+	       } else {
+	           String guid;
+	           JSONObject row = results.getJSONObject(0);
+	           if (row.has("$id$")) {
+	               guid = row.getJSONObject("$id$").getString("id");
+	           } else {
+	               guid = row.getJSONObject("_col_0").getString("id");
+	           }
+	           System.out.println("****************************** Resulting JSON Object: " + row.toString());
+	           System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
+	           return new Referenceable(guid, typeName, null);
+	       }
+	}
+	
+	private String getAtlasVersion(String uri, String[] basicAuth){
+		System.out.println("************************ Getting Atlas Version from: " + uri);
+		JSONObject json = null;
+		String versionValue = null;
+        try{
+        	//json = readJsonFromUrl(uri);
+        	json = readJSONFromUrlAuth(uri, basicAuth);
+        	System.out.println("************************ Response from Atlas: " + json);
+        	versionValue = json.getString("Version");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+		return versionValue.substring(0,3);
+	}
+	
+	public JSONArray searchDSL(String uri, String query){
+		query = query.replaceAll(" ", "+");
+        System.out.println("************************" + query);
+        JSONObject json = null;
+        JSONArray jsonArray = null;
+        try{
+        	json = readJsonFromUrl(uri+query);
+        	jsonArray = json.getJSONArray("results");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return jsonArray;
+    }
+	
+	/*
+	private void createAtlasDataModel(){
+		String stormTopologyType = "{\"enumTypes\": [],"
+								+ "\"structTypes\": [],"
+								+ "\"traitTypes\": [],"
+								+ "\"classTypes\": ["
+								+ "{\"superTypes\":[\"Process\"],"
+								+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
+								+ "\"typeName\":\"storm_topology_reference\","
+								+ "\"typeDescription\": \"storm_topology_reference\","
+								+ "\"attributeDefinitions\": ["
+								+ "{\"name\": \"nodes\","
+								+ "\"dataTypeName\": \"string\","
+								+ "\"multiplicity\": \"optional\","
+								+ "\"isComposite\": false,"
+								+ "\"isUnique\": false,"
+								+ "\"isIndexable\": true,"
+								+ "\"reverseAttributeName\": null}]}]}";
+		String nifiFlowType = "{\"enumTypes\": [],"
+							   + "\"structTypes\": [],"
+							   + "\"traitTypes\": [],"
+							   + "\"classTypes\": ["
+							   + "{\"superTypes\":[\"Process\"],"
+							   + "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
+							   + "\"typeName\": \"nifi_flow\","
+							   + "\"typeDescription\": \"nifi flow type\","
+							   + "\"attributeDefinitions\": ["
+							   + "{\"name\": \"nodes\","
+							   + "\"dataTypeName\": \"string\","
+							   + "\"multiplicity\": \"optional\","
+							   + "\"isComposite\": false,"
+							   + "\"isUnique\": false,"
+							   + "\"isIndexable\": true,"
+							   + "\"reverseAttributeName\": null},"
+							   + "{\"name\": \"flow_id\","
+							   + "\"dataTypeName\": \"string\","
+							   + "\"multiplicity\": \"optional\","
+							   + "\"isComposite\": false,"
+							   + "\"isUnique\": false,"
+							   + "\"isIndexable\": true,"
+							   + "\"reverseAttributeName\": null}]}]}";
+		String eventType = "{\"enumTypes\": [],"
+				   			+ "\"structTypes\": [],"
+				   			+ "\"traitTypes\": [],"
+				   			+ "\"classTypes\": ["
+				   			+ "{\"superTypes\":[\"DataSet\"],"
+				   			+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
+				   			+ "\"typeName\":\"event\","
+				   			+ "\"typeDescription\": \"event type\","
+				   			+ "\"attributeDefinitions\":[{\"name\":\"event_key\","
+				   			+ "\"dataTypeName\":\"string\","
+				   			+ "\"multiplicity\":\"optional\","
+				   			+ "\"isComposite\": false,"
+				   			+ "\"isUnique\": false,"
+				   			+ "\"isIndexable\": true,"
+				   			+ "\"reverseAttributeName\": null}]}]}";
+		
+		try {
+			atlasClient.getType("storm_topology_reference");
+			System.out.println("******************* Atlas Type: storm_topology_reference already exists");
+		} catch (AtlasServiceException e) {
+			try {
+				atlasClient.createType(stormTopologyType);
+				System.out.println("******************* Atlas Type: storm_topology_reference has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
+		}
+		
+		try {
+			atlasClient.getType("nifi_flow");
+			System.out.println("******************* Atlas Type: nifi_flow already exists");
+		} catch (AtlasServiceException e) {		
+			try {
+				atlasClient.createType(nifiFlowType);
+				System.out.println("******************* Atlas Type: nifi_flow has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
+		}
+			
+		try{
+			atlasClient.getType("event");
+			System.out.println("******************* Atlas Type: event already exists");
+		} catch (AtlasServiceException e) {
+			try {
+				atlasClient.createType(eventType);
+				System.out.println("******************* Atlas Type: event has been created");
+			} catch (AtlasServiceException e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+	*/
+	private void createStormTopologyReferenceType(){
+		  final String typeName = "storm_topology_reference";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
+				  new AttributeDefinition("flow_id", "string", Multiplicity.OPTIONAL, false, null),
+		  };
 
+		  addClassTypeDefinition(typeName, ImmutableSet.of("Process"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private void createEventType(){
+		  final String typeName = "event";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
+				  new AttributeDefinition("flowFileId", "string", Multiplicity.OPTIONAL, false, null)
+		  };
+
+		  addClassTypeDefinition(typeName, ImmutableSet.of("DataSet"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
+		HierarchicalTypeDefinition<ClassType> definition =
+            new HierarchicalTypeDefinition<>(ClassType.class, typeName, null, superTypes, attributeDefinitions);
+		classTypeDefinitions.put(typeName, definition);
+	}
+	
+	public ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
+		return ImmutableList.copyOf(enumTypeDefinitionMap.values());
+	}
+
+	public ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
+		return ImmutableList.copyOf(structTypeDefinitionMap.values());
+	}
+	
+	public ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
+		return ImmutableList.of();
+	}
+	
+	private String generateStormEventLineageDataModel(){
+		TypesDef typesDef;
+		String nifiEventLineageDataModelJSON;
+		
+		createEventType();
+		createStormTopologyReferenceType();
+		
+		typesDef = TypesUtil.getTypesDef(
+				getEnumTypeDefinitions(), 	//Enums 
+				getStructTypeDefinitions(), //Struct 
+				getTraitTypeDefinitions(), 	//Traits 
+				ImmutableList.copyOf(classTypeDefinitions.values()));
+		
+		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
+		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
+		return nifiEventLineageDataModelJSON;
+	}
+	
+	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+	    InputStream is = new URL(url).openStream();
+	    try {
+	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+	      String jsonText = readAll(rd);
+	      JSONObject json = new JSONObject(jsonText);
+	      return json;
+	    } finally {
+	      is.close();
+	    }
+	}
+	
+	private JSONObject readJSONFromUrlAuth(String urlString, String[] basicAuth) throws IOException, JSONException {
+		String userPassString = basicAuth[0]+":"+basicAuth[1];
+		JSONObject json = null;
+		try {
+            URL url = new URL (urlString);
+            String encoding = "YWRtaW46YWRtaW4="; //Base64.encodeBase64String(userPassString.getBytes());
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.setRequestProperty  ("Authorization", "Basic " + encoding);
+            InputStream content = (InputStream)connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(content, Charset.forName("UTF-8")));
+  	      	String jsonText = readAll(rd);
+  	      	json = new JSONObject(jsonText);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
+	
+	private String readAll(Reader rd) throws IOException {
+	    StringBuilder sb = new StringBuilder();
+	    int cp;
+	    while ((cp = rd.read()) != -1) {
+	      sb.append((char) cp);
+	    }
+	    return sb.toString();
+	}
+	
 	public static Map<String, String> getFieldValues(Object instance, boolean prependClassName) throws IllegalAccessException {
 		Class clazz = instance.getClass();
 		Map<String, String> output = new HashMap<>();
@@ -500,303 +767,5 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				return instance.toString();
 		else
 			return instance.toString();
-	}
-	
-	//Use this version of method when Flow File UUID has been assigned
-    private Referenceable createEvent(StormProvenanceEvent event) {
-        final String flowFileUuid = event.getEventKey();
-        
-        // TODO populate processor properties and determine real parent group, assuming root group for now
-        final Referenceable processor = new Referenceable("event");
-        processor.set("name", flowFileUuid);
-        processor.set("event_key", "accountNumber");
-        processor.set("description", flowFileUuid);
-        return processor;
-    }
-    
-    //Use this version of method when incoming event is ingested and Flow File UUID has not yet been assigned
-    private Referenceable createEvent(StormProvenanceEvent event, final String uuid) {
-        final Referenceable processor = new Referenceable("event");
-        processor.set("name", uuid);
-        processor.set("event_key", "accountNumber");
-        processor.set("description", uuid);
-        return processor;
-    }
-    
-    /*
-    private Referenceable createEvent(final ProvenanceEventRecord event, final String qualifiedName) {
-        final Referenceable processor = new Referenceable("event");
-        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
-        processor.set("name", qualifiedName);
-        processor.set("flowFileId", event.getFlowFileUuid());
-        processor.set("event_key", event.getAttributes().get(searchableAttribute));
-        processor.set("description", "flow file");
-        return processor;
-    }*/
-	/*
-	public static Referenceable getEntityReferenceFromDSL5(final AtlasClient atlasClient, final String typeName, final String dslQuery)
-            throws Exception {
-		System.out.println("****************************** Query String: " + dslQuery);
-        final JSONArray results = atlasClient.searchByDSL(dslQuery);
-        System.out.println("****************************** Query Results Count: " + results.length());
-        if (results.length() == 0) {
-            return null;
-        } else {
-            String guid;
-            JSONObject row = results.getJSONObject(0);
-            if (row.has("$id$")) {
-                guid = row.getJSONObject("$id$").getString("id");
-            } else {
-                guid = row.getJSONObject("_col_0").getString("id");
-            }
-            System.out.println("****************************** Resulting JSON Object: " + row.toString());
-	        System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
-            return new Referenceable(guid, typeName, null);
-        }
-    }*/
-	
-	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
-	           throws Exception {
-		   System.out.println("****************************** Query String: " + dslQuery);
-		   
-	       JSONArray results = atlasClient.searchByDSL(dslQuery);
-	       //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
-	       System.out.println("****************************** Query Results Count: " + results.length());
-	       if (results.length() == 0) {
-	           return null;
-	       } else {
-	           String guid;
-	           JSONObject row = results.getJSONObject(0);
-	           if (row.has("$id$")) {
-	               guid = row.getJSONObject("$id$").getString("id");
-	           } else {
-	               guid = row.getJSONObject("_col_0").getString("id");
-	           }
-	           System.out.println("****************************** Resulting JSON Object: " + row.toString());
-	           System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
-	           return new Referenceable(guid, typeName, null);
-	       }
-	}
-	
-	private String getAtlasVersion(String uri, String[] basicAuth){
-		System.out.println("************************ Getting Atlas Version from: " + uri);
-		JSONObject json = null;
-		String versionValue = null;
-        try{
-        	//json = readJsonFromUrl(uri);
-        	json = readJSONFromUrlAuth(uri, basicAuth);
-        	System.out.println("************************ Response from Atlas: " + json);
-        	versionValue = json.getString("Version");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-		return versionValue.substring(0,3);
-	}
-	
-	public JSONArray searchDSL(String uri, String query){
-		query = query.replaceAll(" ", "+");
-        System.out.println("************************" + query);
-        JSONObject json = null;
-        JSONArray jsonArray = null;
-        try{
-        	json = readJsonFromUrl(uri+query);
-        	jsonArray = json.getJSONArray("results");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return jsonArray;
-    }
-	
-	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-	    InputStream is = new URL(url).openStream();
-	    try {
-	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-	      String jsonText = readAll(rd);
-	      JSONObject json = new JSONObject(jsonText);
-	      return json;
-	    } finally {
-	      is.close();
-	    }
-	}
-	
-	private JSONObject readJSONFromUrlAuth(String urlString, String[] basicAuth) throws IOException, JSONException {
-		String userPassString = basicAuth[0]+":"+basicAuth[1];
-		JSONObject json = null;
-		try {
-            URL url = new URL (urlString);
-            String encoding = "YWRtaW46YWRtaW4="; //Base64.encodeBase64String(userPassString.getBytes());
-
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setDoOutput(true);
-            connection.setRequestProperty  ("Authorization", "Basic " + encoding);
-            InputStream content = (InputStream)connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(content, Charset.forName("UTF-8")));
-  	      	String jsonText = readAll(rd);
-  	      	json = new JSONObject(jsonText);
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        return json;
-    }
-	
-	private String readAll(Reader rd) throws IOException {
-	    StringBuilder sb = new StringBuilder();
-	    int cp;
-	    while ((cp = rd.read()) != -1) {
-	      sb.append((char) cp);
-	    }
-	    return sb.toString();
-	}
-	
-	private void createAtlasDataModel(){
-		String stormTopologyType = "{\"enumTypes\": [],"
-								+ "\"structTypes\": [],"
-								+ "\"traitTypes\": [],"
-								+ "\"classTypes\": ["
-								+ "{\"superTypes\":[\"Process\"],"
-								+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-								+ "\"typeName\":\"storm_topology_reference\","
-								+ "\"typeDescription\": \"storm_topology_reference\","
-								+ "\"attributeDefinitions\": ["
-								+ "{\"name\": \"nodes\","
-								+ "\"dataTypeName\": \"string\","
-								+ "\"multiplicity\": \"optional\","
-								+ "\"isComposite\": false,"
-								+ "\"isUnique\": false,"
-								+ "\"isIndexable\": true,"
-								+ "\"reverseAttributeName\": null}]}]}";
-		String nifiFlowType = "{\"enumTypes\": [],"
-							   + "\"structTypes\": [],"
-							   + "\"traitTypes\": [],"
-							   + "\"classTypes\": ["
-							   + "{\"superTypes\":[\"Process\"],"
-							   + "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-							   + "\"typeName\": \"nifi_flow\","
-							   + "\"typeDescription\": \"nifi flow type\","
-							   + "\"attributeDefinitions\": ["
-							   + "{\"name\": \"nodes\","
-							   + "\"dataTypeName\": \"string\","
-							   + "\"multiplicity\": \"optional\","
-							   + "\"isComposite\": false,"
-							   + "\"isUnique\": false,"
-							   + "\"isIndexable\": true,"
-							   + "\"reverseAttributeName\": null},"
-							   + "{\"name\": \"flow_id\","
-							   + "\"dataTypeName\": \"string\","
-							   + "\"multiplicity\": \"optional\","
-							   + "\"isComposite\": false,"
-							   + "\"isUnique\": false,"
-							   + "\"isIndexable\": true,"
-							   + "\"reverseAttributeName\": null}]}]}";
-		String eventType = "{\"enumTypes\": [],"
-				   			+ "\"structTypes\": [],"
-				   			+ "\"traitTypes\": [],"
-				   			+ "\"classTypes\": ["
-				   			+ "{\"superTypes\":[\"DataSet\"],"
-				   			+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-				   			+ "\"typeName\":\"event\","
-				   			+ "\"typeDescription\": \"event type\","
-				   			+ "\"attributeDefinitions\":[{\"name\":\"event_key\","
-				   			+ "\"dataTypeName\":\"string\","
-				   			+ "\"multiplicity\":\"optional\","
-				   			+ "\"isComposite\": false,"
-				   			+ "\"isUnique\": false,"
-				   			+ "\"isIndexable\": true,"
-				   			+ "\"reverseAttributeName\": null}]}]}";
-		
-		try {
-			atlasClient.getType("storm_topology_reference");
-			System.out.println("******************* Atlas Type: storm_topology_reference already exists");
-		} catch (AtlasServiceException e) {
-			try {
-				atlasClient.createType(stormTopologyType);
-				System.out.println("******************* Atlas Type: storm_topology_reference has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-		
-		try {
-			atlasClient.getType("nifi_flow");
-			System.out.println("******************* Atlas Type: nifi_flow already exists");
-		} catch (AtlasServiceException e) {		
-			try {
-				atlasClient.createType(nifiFlowType);
-				System.out.println("******************* Atlas Type: nifi_flow has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-			
-		try{
-			atlasClient.getType("event");
-			System.out.println("******************* Atlas Type: event already exists");
-		} catch (AtlasServiceException e) {
-			try {
-				atlasClient.createType(eventType);
-				System.out.println("******************* Atlas Type: event has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-	}
-	
-	private void createStormTopologyReferenceType(){
-		  final String typeName = "storm_topology_reference";
-		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
-				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
-				  new AttributeDefinition("flow_id", "string", Multiplicity.OPTIONAL, false, null),
-		  };
-
-		  addClassTypeDefinition(typeName, ImmutableSet.of("Process"), attributeDefinitions);
-		  System.out.println("Created definition for " + typeName);
-	}
-	
-	private void createEventType(){
-		  final String typeName = "event";
-		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
-				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
-				  new AttributeDefinition("flowFileId", "string", Multiplicity.OPTIONAL, false, null)
-		  };
-
-		  addClassTypeDefinition(typeName, ImmutableSet.of("DataSet"), attributeDefinitions);
-		  System.out.println("Created definition for " + typeName);
-	}
-	
-	private void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
-		HierarchicalTypeDefinition<ClassType> definition =
-            new HierarchicalTypeDefinition<>(ClassType.class, typeName, null, superTypes, attributeDefinitions);
-		classTypeDefinitions.put(typeName, definition);
-	}
-	
-	public ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
-		return ImmutableList.copyOf(enumTypeDefinitionMap.values());
-	}
-
-	public ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
-		return ImmutableList.copyOf(structTypeDefinitionMap.values());
-	}
-	
-	public ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
-		return ImmutableList.of();
-	}
-	
-	private String generateStormEventLineageDataModel(){
-		TypesDef typesDef;
-		String nifiEventLineageDataModelJSON;
-		
-		createEventType();
-		createStormTopologyReferenceType();
-		
-		typesDef = TypesUtil.getTypesDef(
-				getEnumTypeDefinitions(), 	//Enums 
-				getStructTypeDefinitions(), //Struct 
-				getTraitTypeDefinitions(), 	//Traits 
-				ImmutableList.copyOf(classTypeDefinitions.values()));
-		
-		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
-		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
-		return nifiEventLineageDataModelJSON;
 	}
 }
