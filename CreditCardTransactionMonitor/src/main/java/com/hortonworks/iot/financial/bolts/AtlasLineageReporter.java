@@ -117,78 +117,77 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		Referenceable outgoingEvent = null;
 		String generatedUuid = null;
 		if(!skipReport){
-		Iterator<StormProvenanceEvent> iterator = stormProvenance.iterator();
-		StormProvenanceEvent currentEvent = new StormProvenanceEvent();
-		while(iterator.hasNext()){
-			currentEvent = iterator.next();
-			transactionKey = currentEvent.getEventKey();
-			System.out.println("********************* Printing Lineage for Event: " + transactionKey);
-			System.out.println("********************* Component Name: " + currentEvent.getComponentName());
-			System.out.println("********************* Component Type: " + currentEvent.getComponentType());  
-			if(currentEvent.getComponentType().equalsIgnoreCase("SPOUT")){
-				spoutName =  currentEvent.getComponentName();
-				spoutInstance = Utils.javaDeserialize(spouts.get(spoutName).get_spout_object().get_serialized_java(), Serializable.class);
-				if(spoutInstance.getClass().getSimpleName().equalsIgnoreCase("KafkaSpout")){
-					try {
-						spoutValueMap = getFieldValues(spoutInstance, false);
-					} catch (IllegalAccessException e) {
-						e.printStackTrace();
+			Iterator<StormProvenanceEvent> iterator = stormProvenance.iterator();
+			StormProvenanceEvent currentEvent = new StormProvenanceEvent();
+			while(iterator.hasNext()){
+				currentEvent = iterator.next();
+				transactionKey = currentEvent.getEventKey();
+				System.out.println("********************* Printing Lineage for Event: " + transactionKey);
+				System.out.println("********************* Component Name: " + currentEvent.getComponentName());
+				System.out.println("********************* Component Type: " + currentEvent.getComponentType());  
+				if(currentEvent.getComponentType().equalsIgnoreCase("SPOUT")){
+					spoutName =  currentEvent.getComponentName();
+					spoutInstance = Utils.javaDeserialize(spouts.get(spoutName).get_spout_object().get_serialized_java(), Serializable.class);
+					if(spoutInstance.getClass().getSimpleName().equalsIgnoreCase("KafkaSpout")){
+						try {
+							spoutValueMap = getFieldValues(spoutInstance, false);
+						} catch (IllegalAccessException e) {
+							e.printStackTrace();
+						}
+						System.out.println("********************* Source: " + spoutValueMap.get("_spoutConfig.topic"));
+						System.out.println("********************* Source Type: " + spoutInstance.getClass().getSimpleName());
 					}
-					System.out.println("********************* Source: " + spoutValueMap.get("_spoutConfig.topic"));
-					System.out.println("********************* Source Type: " + spoutInstance.getClass().getSimpleName());
-				}
-				//System.out.println("********************* Entry Spout: " + spoutValueMap.toString());
-				
-				try {
-					incomingEvent = getEventReference(currentEvent);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				if(incomingEvent != null){
-					System.out.println("********************* Source Referenceable Event: " + incomingEvent.toString());
-				}else{
-					System.out.println("********************* Could not find Referenceable Event, creating ....");
+					//System.out.println("********************* Entry Spout: " + spoutValueMap.toString());
 					try {
-						incomingEvent = register(atlasClient, createEvent(currentEvent));
+						incomingEvent = getEventReference(currentEvent);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					System.out.println("********************* Source Referenceable Event: " + incomingEvent.toString());
+					if(incomingEvent != null){
+						System.out.println("********************* Source Referenceable Event: " + incomingEvent.toString());
+					}else{
+						System.out.println("********************* Could not find Referenceable Event, creating ....");
+						try {
+							incomingEvent = register(atlasClient, createEvent(currentEvent));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						System.out.println("********************* Source Referenceable Event: " + incomingEvent.toString());
+					}
 				}
-			}
-			System.out.println("********************* Event Type: " + currentEvent.getEventType());
-			if(currentEvent.getEventType().equalsIgnoreCase("SEND")){	
-				System.out.println("********************* Destination: " + currentEvent.getTargetDataRepositoryLocation());
-				System.out.println("********************* Destination Type: " + currentEvent.getTargetDataRepositoryType());
-				try {
-					outgoingEvent = null;//getEventReference(currentEvent);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				if(outgoingEvent != null){
-					System.out.println("********************* Destination Referenceable Event: " + outgoingEvent.toString());
-				}else{
-					System.out.println("********************* Could not find Referenceable Event, creating ....");
-					generatedUuid = UUID.randomUUID().toString();
+				System.out.println("********************* Event Type: " + currentEvent.getEventType());
+				if(currentEvent.getEventType().equalsIgnoreCase("SEND")){	
+					System.out.println("********************* Destination: " + currentEvent.getTargetDataRepositoryLocation());
+					System.out.println("********************* Destination Type: " + currentEvent.getTargetDataRepositoryType());
 					try {
-						outgoingEvent = register(atlasClient, createEvent(currentEvent, generatedUuid));
+						outgoingEvent = null;//getEventReference(currentEvent);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					System.out.println("********************* Destination Referenceable Event: " + outgoingEvent.toString());
+					if(outgoingEvent != null){
+						System.out.println("********************* Destination Referenceable Event: " + outgoingEvent.toString());
+					}else{
+						System.out.println("********************* Could not find Referenceable Event, creating ....");
+						generatedUuid = UUID.randomUUID().toString();
+						try {
+							outgoingEvent = register(atlasClient, createEvent(currentEvent, generatedUuid));
+						} catch (Exception e) {
+							e.printStackTrace();
+					}
+						System.out.println("********************* Destination Referenceable Event: " + outgoingEvent.toString());
+					}
 				}
+				lineage.add(currentEvent.getComponentName());
 			}
-			lineage.add(currentEvent.getComponentName());
-		}
-		try {
-			topology = createTopologyInstance(topologyConf, incomingEvent, outgoingEvent, lineage);
-			System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("id").toString());
-			System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("inputs").toString());
-			System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("outputs").toString());
-			register(atlasClient, topology);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+			try {
+				topology = createTopologyInstance(topologyConf, incomingEvent, outgoingEvent, lineage);
+				System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("qualifiedName").toString());
+				System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("inputs").toString());
+				System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("outputs").toString());
+				register(atlasClient, topology);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -199,14 +198,6 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		String dslQuery = String.format("%s where %s = '%s'", typeName, "qualifiedName", id);
 		System.out.println("********************* Atlas Version is: " + atlasVersion);
 		Referenceable eventReferenceable = null;
-		/*
-		if(atlasVersion.equalsIgnoreCase("0.5"))
-			eventReferenceable = getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
-		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
-		else
-			eventReferenceable = null;
-		*/
 		
 		if(atlasVersion >= 0.7)
 			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
@@ -221,14 +212,6 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		//final String id = event.getEventKey();
 		 
 		String dslQuery = String.format("%s where %s = '%s'", typeName, "name", "count");
-		/*
-		if(atlasVersion.equalsIgnoreCase("0.5"))
-			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
-		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
-		else
-			return null;
-		*/
 		
 		if(atlasVersion >= 0.7)
 			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
@@ -265,13 +248,10 @@ public class AtlasLineageReporter extends BaseRichBolt {
         String typeName = "DataSet";
         LineageReferenceType[] inputs = {new LineageReferenceType(inputEvent.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         LineageReferenceType[] outputs = {new LineageReferenceType(outputEvent.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
-        //typeName = "storm_node";
-        //LineageReferenceType[] nodes = {new LineageReferenceType(getBoltReference().getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
     	String topologyName = "CreditCardTransactionMonitor" + inputs[0].getId();
     	Referenceable topologyReferenceable = new Referenceable("storm_topology_reference");
     	topologyReferenceable.set("id", topologyName);
     	topologyReferenceable.set("name", topologyName);
-    	//topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyInfo.get_name());
     	String owner = "";//topologyInfo.get_owner();
     	if (StringUtils.isEmpty(owner)) {
     		owner = ANONYMOUS_OWNER;
@@ -282,7 +262,6 @@ public class AtlasLineageReporter extends BaseRichBolt {
     	topologyReferenceable.set("inputs", inputs);
     	topologyReferenceable.set("outputs", outputs);
     	topologyReferenceable.set("nodes", Arrays.toString(lineage.toArray()));
-    	//topologyReferenceable.set("nodes", nodes);
 
     	return topologyReferenceable;
     }
@@ -297,11 +276,9 @@ public class AtlasLineageReporter extends BaseRichBolt {
     	Referenceable topologyReferenceable = new Referenceable("storm_topology_reference");
     	topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyName);
     	topologyReferenceable.set("name", topologyName);
-    	
     	topologyReferenceable.set("inputs", sourceList);
     	topologyReferenceable.set("outputs", targetList);
     	topologyReferenceable.set("nodes", lineage.toString());
-    	//topologyReferenceable.set("nodes", nodes);
 
     	return topologyReferenceable;
     }
@@ -381,25 +358,24 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	
 	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
 	           throws Exception {
-		   System.out.println("****************************** Query String: " + dslQuery);
-		   
-	       JSONArray results = atlasClient.searchByDSL(dslQuery);
-	       //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
-	       System.out.println("****************************** Query Results Count: " + results.length());
-	       if (results.length() == 0) {
-	           return null;
-	       } else {
-	           String guid;
-	           JSONObject row = results.getJSONObject(0);
-	           if (row.has("$id$")) {
-	               guid = row.getJSONObject("$id$").getString("id");
-	           } else {
-	               guid = row.getJSONObject("_col_0").getString("id");
-	           }
-	           System.out.println("****************************** Resulting JSON Object: " + row.toString());
-	           System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
-	           return new Referenceable(guid, typeName, null);
-	       }
+		System.out.println("****************************** Query String: " + dslQuery);
+		JSONArray results = atlasClient.searchByDSL(dslQuery);
+	    //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
+	    System.out.println("****************************** Query Results Count: " + results.length());
+	    if (results.length() == 0) {
+	    	return null;
+	    } else {
+	    	String guid;
+	    	JSONObject row = results.getJSONObject(0);
+	    	if (row.has("$id$")) {
+	    		guid = row.getJSONObject("$id$").getString("id");
+	    	} else {
+	    		guid = row.getJSONObject("_col_0").getString("id");
+	    	}
+	    	System.out.println("****************************** Resulting JSON Object: " + row.toString());
+	    	System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
+	    	return new Referenceable(guid, typeName, null);
+	    }
 	}
 	
 	private String getAtlasVersion(String uri, String[] basicAuth){
@@ -431,100 +407,6 @@ public class AtlasLineageReporter extends BaseRichBolt {
         return jsonArray;
     }
 	
-	/*
-	private void createAtlasDataModel(){
-		String stormTopologyType = "{\"enumTypes\": [],"
-								+ "\"structTypes\": [],"
-								+ "\"traitTypes\": [],"
-								+ "\"classTypes\": ["
-								+ "{\"superTypes\":[\"Process\"],"
-								+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-								+ "\"typeName\":\"storm_topology_reference\","
-								+ "\"typeDescription\": \"storm_topology_reference\","
-								+ "\"attributeDefinitions\": ["
-								+ "{\"name\": \"nodes\","
-								+ "\"dataTypeName\": \"string\","
-								+ "\"multiplicity\": \"optional\","
-								+ "\"isComposite\": false,"
-								+ "\"isUnique\": false,"
-								+ "\"isIndexable\": true,"
-								+ "\"reverseAttributeName\": null}]}]}";
-		String nifiFlowType = "{\"enumTypes\": [],"
-							   + "\"structTypes\": [],"
-							   + "\"traitTypes\": [],"
-							   + "\"classTypes\": ["
-							   + "{\"superTypes\":[\"Process\"],"
-							   + "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-							   + "\"typeName\": \"nifi_flow\","
-							   + "\"typeDescription\": \"nifi flow type\","
-							   + "\"attributeDefinitions\": ["
-							   + "{\"name\": \"nodes\","
-							   + "\"dataTypeName\": \"string\","
-							   + "\"multiplicity\": \"optional\","
-							   + "\"isComposite\": false,"
-							   + "\"isUnique\": false,"
-							   + "\"isIndexable\": true,"
-							   + "\"reverseAttributeName\": null},"
-							   + "{\"name\": \"flow_id\","
-							   + "\"dataTypeName\": \"string\","
-							   + "\"multiplicity\": \"optional\","
-							   + "\"isComposite\": false,"
-							   + "\"isUnique\": false,"
-							   + "\"isIndexable\": true,"
-							   + "\"reverseAttributeName\": null}]}]}";
-		String eventType = "{\"enumTypes\": [],"
-				   			+ "\"structTypes\": [],"
-				   			+ "\"traitTypes\": [],"
-				   			+ "\"classTypes\": ["
-				   			+ "{\"superTypes\":[\"DataSet\"],"
-				   			+ "\"hierarchicalMetaTypeName\":\"org.apache.atlas.typesystem.types.ClassType\","
-				   			+ "\"typeName\":\"event\","
-				   			+ "\"typeDescription\": \"event type\","
-				   			+ "\"attributeDefinitions\":[{\"name\":\"event_key\","
-				   			+ "\"dataTypeName\":\"string\","
-				   			+ "\"multiplicity\":\"optional\","
-				   			+ "\"isComposite\": false,"
-				   			+ "\"isUnique\": false,"
-				   			+ "\"isIndexable\": true,"
-				   			+ "\"reverseAttributeName\": null}]}]}";
-		
-		try {
-			atlasClient.getType("storm_topology_reference");
-			System.out.println("******************* Atlas Type: storm_topology_reference already exists");
-		} catch (AtlasServiceException e) {
-			try {
-				atlasClient.createType(stormTopologyType);
-				System.out.println("******************* Atlas Type: storm_topology_reference has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-		
-		try {
-			atlasClient.getType("nifi_flow");
-			System.out.println("******************* Atlas Type: nifi_flow already exists");
-		} catch (AtlasServiceException e) {		
-			try {
-				atlasClient.createType(nifiFlowType);
-				System.out.println("******************* Atlas Type: nifi_flow has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-			
-		try{
-			atlasClient.getType("event");
-			System.out.println("******************* Atlas Type: event already exists");
-		} catch (AtlasServiceException e) {
-			try {
-				atlasClient.createType(eventType);
-				System.out.println("******************* Atlas Type: event has been created");
-			} catch (AtlasServiceException e1) {
-				e1.printStackTrace();
-			}
-		}
-	}
-	*/
 	private void createStormTopologyReferenceType(){
 		  final String typeName = "storm_topology_reference";
 		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
