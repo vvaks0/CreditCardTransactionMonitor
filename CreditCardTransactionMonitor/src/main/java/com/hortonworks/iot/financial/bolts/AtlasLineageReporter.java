@@ -99,6 +99,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private String atlasUrl = DEFAULT_ATLAS_REST_ADDRESS;
 	private AtlasClient atlasClient;
 	private Double atlasVersion;
+	private String atlasPasswordEncoding = "YWRtaW46YWRtaW4=";
 	private Map<String, EnumTypeDefinition> enumTypeDefinitionMap = new HashMap<String, EnumTypeDefinition>();
 	private Map<String, StructTypeDefinition> structTypeDefinitionMap = new HashMap<String, StructTypeDefinition>();
 	private Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap<String, HierarchicalTypeDefinition<ClassType>>();
@@ -331,8 +332,16 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			atlasVersion = null;
 		}
 		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
-			//createAtlasDataModel();
-			generateStormEventLineageDataModel();
+			try {
+				if(atlasClient.getType("event") == null && atlasClient.getType("storm_topology_reference") == null){
+					atlasClient.createType(generateStormEventLineageDataModel());
+					System.out.println("******************* Storm Lineage Atlas Types have been created");
+				}else{
+					System.out.println("******************* Storm Lineage Atlas Types already exists");
+				}
+			}catch (AtlasServiceException e) {
+				e.printStackTrace();
+			}
 		}else{
 			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
 			this.skipReport = true;
@@ -342,28 +351,6 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("ProvenanceEvent"));
 	}
-	
-	/*
-	//Use this version of method when Flow File UUID has been assigned
-    private Referenceable createEventOld(StormProvenanceEvent event) {
-        final String flowFileUuid = event.getEventKey();
-        
-        // TODO populate processor properties and determine real parent group, assuming root group for now
-        final Referenceable processor = new Referenceable("event");
-        processor.set("name", flowFileUuid);
-        processor.set("event_key", "accountNumber");
-        processor.set("description", flowFileUuid);
-        return processor;
-    }
-    
-    //Use this version of method when incoming event is ingested and Flow File UUID has not yet been assigned
-    private Referenceable createEventOld(StormProvenanceEvent event, String uuid) {
-        final Referenceable processor = new Referenceable("event");
-        processor.set("name", uuid);
-        processor.set("event_key", "accountNumber");
-        processor.set("description", uuid);
-        return processor;
-    }*/
     
     private Referenceable createEvent(StormProvenanceEvent event) {
         String qualifiedName = "SEND_" + event.getEventKey();
@@ -577,7 +564,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	
 	private String generateStormEventLineageDataModel(){
 		TypesDef typesDef;
-		String nifiEventLineageDataModelJSON;
+		String stormEventLineageDataModelJSON;
 		
 		createEventType();
 		createStormTopologyReferenceType();
@@ -588,9 +575,9 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				getTraitTypeDefinitions(), 	//Traits 
 				ImmutableList.copyOf(classTypeDefinitions.values()));
 		
-		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
-		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
-		return nifiEventLineageDataModelJSON;
+		stormEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
+		System.out.println("Submitting Types Definition: " + stormEventLineageDataModelJSON);
+		return stormEventLineageDataModelJSON;
 	}
 	
 	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
@@ -610,12 +597,12 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		JSONObject json = null;
 		try {
             URL url = new URL (urlString);
-            String encoding = "YWRtaW46YWRtaW4="; //Base64.encodeBase64String(userPassString.getBytes());
+            //String encodedUserPassString = Base64.encodeBase64String(userPassString.getBytes());
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty  ("Authorization", "Basic " + encoding);
+            connection.setRequestProperty  ("Authorization", "Basic " + atlasPasswordEncoding);
             InputStream content = (InputStream)connection.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(content, Charset.forName("UTF-8")));
   	      	String jsonText = readAll(rd);
