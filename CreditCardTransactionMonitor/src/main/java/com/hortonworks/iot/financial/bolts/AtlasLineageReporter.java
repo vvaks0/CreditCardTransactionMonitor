@@ -25,6 +25,7 @@ import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.json.InstanceSerialization;
 import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.TypesSerialization;
+import org.apache.atlas.typesystem.persistence.Id;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
 import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.DataTypes;
@@ -98,7 +99,9 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private String atlasUrl = DEFAULT_ATLAS_REST_ADDRESS;
 	private AtlasClient atlasClient;
 	private Double atlasVersion;
-	private final Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap<>();
+	private Map<String, EnumTypeDefinition> enumTypeDefinitionMap = new HashMap<String, EnumTypeDefinition>();
+	private Map<String, StructTypeDefinition> structTypeDefinitionMap = new HashMap<String, StructTypeDefinition>();
+	private Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap<String, HierarchicalTypeDefinition<ClassType>>();
 	private boolean skipReport = false;
 	
 	@SuppressWarnings("unused")
@@ -190,9 +193,9 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	
 	private Referenceable getEventReference(StormProvenanceEvent event) throws Exception {
 		final String typeName = "event";
-		final String id = event.getEventKey();
+		final String id = "SEND_" + event.getEventKey();
 		 
-		String dslQuery = String.format("%s where %s = '%s'", typeName, "name", id);
+		String dslQuery = String.format("%s where %s = '%s'", typeName, "qualifiedName", id);
 		System.out.println("********************* Atlas Version is: " + atlasVersion);
 		Referenceable eventReferenceable = null;
 		/*
@@ -281,7 +284,26 @@ public class AtlasLineageReporter extends BaseRichBolt {
     	//topologyReferenceable.set("nodes", nodes);
 
     	return topologyReferenceable;
-    }        
+    }
+    
+    private Referenceable createTopologyInstanceNew(Map stormConf, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
+        List<Id> sourceList = new ArrayList<Id>();
+        List<Id> targetList = new ArrayList<Id>();
+        sourceList.add(inputEvent.getId());
+        targetList.add(outputEvent.getId());
+        
+        String topologyName = "CreditCardTransactionMonitor_" + inputEvent.getId()._getId();
+    	Referenceable topologyReferenceable = new Referenceable("storm_topology_reference");
+    	topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyName);
+    	topologyReferenceable.set("name", topologyName);
+    	
+    	topologyReferenceable.set("inputs", sourceList);
+    	topologyReferenceable.set("outputs", targetList);
+    	topologyReferenceable.set("nodes", lineage.toString());
+    	//topologyReferenceable.set("nodes", nodes);
+
+    	return topologyReferenceable;
+    }
 
     private String getClusterName(Map stormConf) {
         String clusterName = DEFAULT_CLUSTER_NAME;
@@ -314,7 +336,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			this.skipReport = true;
 		}
 	}
-	
+	/*
 	private void createStormTopologyReferenceClass() throws AtlasException {
 		String type = "storm_topology_reference";
 		AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
@@ -339,7 +361,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
         
         classTypeDefinitions.put(type, definition);
         System.out.println("Created definition for " + type);
-    }
+    }*/
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("ProvenanceEvent"));
@@ -499,7 +521,18 @@ public class AtlasLineageReporter extends BaseRichBolt {
         processor.set("description", uuid);
         return processor;
     }
-	
+    
+    /*
+    private Referenceable createEvent(final ProvenanceEventRecord event, final String qualifiedName) {
+        final Referenceable processor = new Referenceable("event");
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
+        processor.set("name", qualifiedName);
+        processor.set("flowFileId", event.getFlowFileUuid());
+        processor.set("event_key", event.getAttributes().get(searchableAttribute));
+        processor.set("description", "flow file");
+        return processor;
+    }*/
+	/*
 	public static Referenceable getEntityReferenceFromDSL5(final AtlasClient atlasClient, final String typeName, final String dslQuery)
             throws Exception {
 		System.out.println("****************************** Query String: " + dslQuery);
@@ -519,7 +552,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	        System.out.println("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
             return new Referenceable(guid, typeName, null);
         }
-    }
+    }*/
 	
 	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
 	           throws Exception {
@@ -706,5 +739,63 @@ public class AtlasLineageReporter extends BaseRichBolt {
 				e1.printStackTrace();
 			}
 		}
+	}
+	
+	private void createStormTopologyReferenceType(){
+		  final String typeName = "storm_topology_reference";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
+				  new AttributeDefinition("flow_id", "string", Multiplicity.OPTIONAL, false, null),
+		  };
+
+		  addClassTypeDefinition(typeName, ImmutableSet.of("Process"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private void createEventType(){
+		  final String typeName = "event";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
+				  new AttributeDefinition("flowFileId", "string", Multiplicity.OPTIONAL, false, null)
+		  };
+
+		  addClassTypeDefinition(typeName, ImmutableSet.of("DataSet"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
+		HierarchicalTypeDefinition<ClassType> definition =
+            new HierarchicalTypeDefinition<>(ClassType.class, typeName, null, superTypes, attributeDefinitions);
+		classTypeDefinitions.put(typeName, definition);
+	}
+	
+	public ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
+		return ImmutableList.copyOf(enumTypeDefinitionMap.values());
+	}
+
+	public ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
+		return ImmutableList.copyOf(structTypeDefinitionMap.values());
+	}
+	
+	public ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
+		return ImmutableList.of();
+	}
+	
+	private String generateNifiEventLineageDataModel(){
+		TypesDef typesDef;
+		String nifiEventLineageDataModelJSON;
+		
+		createEventType();
+		createStormTopologyReferenceType();
+		
+		typesDef = TypesUtil.getTypesDef(
+				getEnumTypeDefinitions(), 	//Enums 
+				getStructTypeDefinitions(), //Struct 
+				getTraitTypeDefinitions(), 	//Traits 
+				ImmutableList.copyOf(classTypeDefinitions.values()));
+		
+		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
+		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
+		return nifiEventLineageDataModelJSON;
 	}
 }
