@@ -330,7 +330,8 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			atlasVersion = null;
 		}
 		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
-			createAtlasDataModel();
+			//createAtlasDataModel();
+			generateStormEventLineageDataModel();
 		}else{
 			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
 			this.skipReport = true;
@@ -781,7 +782,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		return ImmutableList.of();
 	}
 	
-	private String generateNifiEventLineageDataModel(){
+	private String generateStormEventLineageDataModel(){
 		TypesDef typesDef;
 		String nifiEventLineageDataModelJSON;
 		
