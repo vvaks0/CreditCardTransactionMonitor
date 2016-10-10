@@ -333,14 +333,17 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		}
 		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
 			try {
-				if(atlasClient.getType("event") == null && atlasClient.getType("storm_topology_reference") == null){
+				atlasClient.getType("event");
+				atlasClient.getType("storm_topology_reference");					
+				System.out.println("******************* Storm Lineage Atlas Types already exists");
+			}catch (AtlasServiceException e) {
+				System.out.println("******************* Storm Lineage Atlas Types are not presemt... creating");
+				try {
 					atlasClient.createType(generateStormEventLineageDataModel());
 					System.out.println("******************* Storm Lineage Atlas Types have been created");
-				}else{
-					System.out.println("******************* Storm Lineage Atlas Types already exists");
+				} catch (AtlasServiceException e1) {
+					e1.printStackTrace();
 				}
-			}catch (AtlasServiceException e) {
-				e.printStackTrace();
 			}
 		}else{
 			System.out.println("********************* Atlas is not present or Atlas version is incompatible, skip lineage reporting");
