@@ -180,6 +180,10 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		}
 	}
 	
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(new Fields("ProvenanceEvent"));
+	}
+	
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
 		Properties props = System.getProperties();
         props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
@@ -201,7 +205,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		if(atlasVersion != null && Double.valueOf(atlasVersion) >= 0.7){
 			try {
 				atlasClient.getType("event");
-				atlasClient.getType("storm_topology_reference");					
+				atlasClient.getType("storm_topology_instance");					
 				System.out.println("******************* Storm Lineage Atlas Types already exists");
 			}catch (AtlasServiceException e) {
 				System.out.println("******************* Storm Lineage Atlas Types are not presemt... creating");
@@ -264,35 +268,8 @@ public class AtlasLineageReporter extends BaseRichBolt {
 
         return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
-    
-    private Referenceable createTopologyInstance(Map stormConf, Referenceable topologyReference, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
-    	Id topologyReferenceId = null;
-    	List<Id> sourceList = new ArrayList<Id>();
-        List<Id> targetList = new ArrayList<Id>();
-        sourceList.add(inputEvent.getId());
-        targetList.add(outputEvent.getId());
-        
-        if(topologyReference != null){
-        	topologyReferenceId = topologyReference.getId();
-        }
-        
-        String topologyName = stormTopologyName + "_" + inputEvent.getId()._getId();
-    	Referenceable topologyReferenceable = new Referenceable("storm_topology_reference");
-    	topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyName);
-    	topologyReferenceable.set("name", topologyName);
-    	topologyReferenceable.set("inputs", sourceList);
-    	topologyReferenceable.set("outputs", targetList);
-    	topologyReferenceable.set("nodes", lineage.toString());
-    	topologyReferenceable.set("topologyReference", topologyReferenceId);
-
-    	return topologyReferenceable;
-    }
-
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("ProvenanceEvent"));
-	}
-    
-    private Referenceable createEvent(StormProvenanceEvent event) {
+	
+	private Referenceable createEvent(StormProvenanceEvent event) {
         String qualifiedName = "SEND_" + event.getEventKey();
     	Referenceable processor = new Referenceable("event");
         
@@ -315,7 +292,30 @@ public class AtlasLineageReporter extends BaseRichBolt {
         processor.set("description", "storm event");
         return processor;
     }
-	
+    
+    private Referenceable createTopologyInstance(Map stormConf, Referenceable topologyReference, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
+    	Id topologyReferenceId = null;
+    	List<Id> sourceList = new ArrayList<Id>();
+        List<Id> targetList = new ArrayList<Id>();
+        sourceList.add(inputEvent.getId());
+        targetList.add(outputEvent.getId());
+        
+        if(topologyReference != null){
+        	topologyReferenceId = topologyReference.getId();
+        }
+        
+        String topologyName = stormTopologyName + "_" + inputEvent.getId()._getId();
+    	Referenceable topologyReferenceable = new Referenceable("storm_topology_instance");
+    	topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyName);
+    	topologyReferenceable.set("name", topologyName);
+    	topologyReferenceable.set("inputs", sourceList);
+    	topologyReferenceable.set("outputs", targetList);
+    	topologyReferenceable.set("nodes", lineage.toString());
+    	topologyReferenceable.set("topologyReference", topologyReferenceId);
+
+    	return topologyReferenceable;
+    }
+
 	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
 	           throws Exception {
 		System.out.println("****************************** Query String: " + dslQuery);
@@ -368,7 +368,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
     }
 	
 	private void createStormTopologyReferenceType(){
-		  final String typeName = "storm_topology_reference";
+		  final String typeName = "storm_topology_instance";
 		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
 				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
 				  new AttributeDefinition("topologyReference", "storm_topology", Multiplicity.OPTIONAL, false, null),
