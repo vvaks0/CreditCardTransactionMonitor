@@ -186,7 +186,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.collector = collector;
 		this.spouts = context.getRawTopology().get_spouts();	
 		this.constants = new Constants();
-		this.stormTopologyId = context.getStormId();
+		this.stormTopologyId = map.get("topology.name").toString();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
 		String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
 		String[] atlasURL = {atlasUrl};
