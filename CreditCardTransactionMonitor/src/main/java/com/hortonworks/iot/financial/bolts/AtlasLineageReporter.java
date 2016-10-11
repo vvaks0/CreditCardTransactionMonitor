@@ -367,7 +367,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
         return jsonArray;
     }
 	
-	private void createStormTopologyReferenceType(){
+	private void createStormTopologyInstanceType(){
 		  final String typeName = "storm_topology_instance";
 		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
 				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
@@ -411,8 +411,19 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		TypesDef typesDef;
 		String stormEventLineageDataModelJSON;
 		
-		createEventType();
-		createStormTopologyReferenceType();
+		try {
+			atlasClient.getType("event");
+			System.out.println("********************* Nifi Atlas Type: event is already present");
+		} catch (AtlasServiceException e) {
+			createEventType();
+		}
+		
+		try {
+			atlasClient.getType("storm_topology_instance");
+			System.out.println("********************* Nifi Atlas Type: storm_topology_instance is already present");
+		} catch (AtlasServiceException e) {
+			createStormTopologyInstanceType();
+		}
 		
 		typesDef = TypesUtil.getTypesDef(
 				getEnumTypeDefinitions(), 	//Enums 
