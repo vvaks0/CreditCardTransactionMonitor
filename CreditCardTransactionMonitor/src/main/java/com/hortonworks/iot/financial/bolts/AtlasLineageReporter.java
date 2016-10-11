@@ -80,7 +80,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private String DEFAULT_ADMIN_PASS = "admin";
 	private String atlasUrl = DEFAULT_ATLAS_REST_ADDRESS;
 	private String atlasPasswordEncoding = "YWRtaW46YWRtaW4=";
-	private String stormTopologyId;
+	private String stormTopologyName;
 	private Double atlasVersion;
 	private AtlasClient atlasClient;
 	private OutputCollector collector;
@@ -168,7 +168,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 			}
 			try {
 				//Search Atlas for the Topology that the instance was created from
-				Referenceable referenceTopology = getTopologyReference(stormTopologyId);
+				Referenceable referenceTopology = getTopologyReference(stormTopologyName);
 				topology = createTopologyInstance(topologyConf, referenceTopology, incomingEvent, outgoingEvent, lineage);
 				System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("qualifiedName").toString());
 				System.out.println("********************* Processing Topology: " + topology.getValuesMap().get("inputs").toString());
@@ -186,7 +186,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 		this.collector = collector;
 		this.spouts = context.getRawTopology().get_spouts();	
 		this.constants = new Constants();
-		this.stormTopologyId = map.get("topology.name").toString();
+		this.stormTopologyName = map.get("topology.name").toString();
 		this.atlasUrl = "http://" + constants.getAtlasHost() + ":" + constants.getAtlasPort();
 		String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
 		String[] atlasURL = {atlasUrl};
@@ -237,7 +237,7 @@ public class AtlasLineageReporter extends BaseRichBolt {
 	private Referenceable getTopologyReference(String topologyName) throws Exception {
 		String typeName = "storm_topology";
 		 
-		String dslQuery = String.format("%s where %s = '%s'", typeName, "id", topologyName);
+		String dslQuery = String.format("%s where %s = '%s'", typeName, "qualifiedName", topologyName);
 		System.out.println("********************* Atlas Version is: " + atlasVersion);
 		Referenceable eventReferenceable = null;
 		
@@ -254,38 +254,36 @@ public class AtlasLineageReporter extends BaseRichBolt {
             return null;
         }
 
-        final String typeName = referenceable.getTypeName();
+        String typeName = referenceable.getTypeName();
         System.out.println("creating instance of type " + typeName);
 
-        final String entityJSON = InstanceSerialization.toJson(referenceable, true);
+        String entityJSON = InstanceSerialization.toJson(referenceable, true);
         System.out.println("Submitting new entity " + referenceable.getTypeName() + ":" + entityJSON);
-
-        //final JSONArray guid = atlasClient.createEntity(entityJSON); //client vesion 0.6
-        //final JSONObject guid = atlasClient.createEntity(entityJSON);
         List<String> guid = atlasClient.createEntity(entityJSON);
-        
-        System.out.println("created instance for type " + typeName + ", guid: " + guid); //client version 0.6
-        //System.out.println("created instance for type " + typeName + ", guid: " + guid.getString("GUID"));
-        
-        //return new Referenceable(guid.getString(0), referenceable.getTypeName(), null); //client version 0.6
-        //return new Referenceable(guid.getString("GUID"), referenceable.getTypeName(), null);
+        System.out.println("created instance for type " + typeName + ", guid: " + guid); //client version 0.7
+
         return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
     
     private Referenceable createTopologyInstance(Map stormConf, Referenceable topologyReference, Referenceable inputEvent, Referenceable outputEvent, List<String> lineage) {
-        List<Id> sourceList = new ArrayList<Id>();
+    	Id topologyReferenceId = null;
+    	List<Id> sourceList = new ArrayList<Id>();
         List<Id> targetList = new ArrayList<Id>();
         sourceList.add(inputEvent.getId());
         targetList.add(outputEvent.getId());
         
-        String topologyName = "CreditCardTransactionMonitor_" + inputEvent.getId()._getId();
+        if(topologyReference != null){
+        	topologyReferenceId = topologyReference.getId();
+        }
+        
+        String topologyName = stormTopologyName + "_" + inputEvent.getId()._getId();
     	Referenceable topologyReferenceable = new Referenceable("storm_topology_reference");
     	topologyReferenceable.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, topologyName);
     	topologyReferenceable.set("name", topologyName);
     	topologyReferenceable.set("inputs", sourceList);
     	topologyReferenceable.set("outputs", targetList);
     	topologyReferenceable.set("nodes", lineage.toString());
-    	topologyReferenceable.set("topologyReference", topologyReference.getId());
+    	topologyReferenceable.set("topologyReference", topologyReferenceId);
 
     	return topologyReferenceable;
     }
