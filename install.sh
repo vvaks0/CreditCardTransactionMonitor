@@ -232,7 +232,7 @@ deployTemplateToNifi () {
 
        	echo "*********************************Instantiating NIFI Flow..."
        	# Instantiate NIFI Template
-       	curl -u admin:admin -i -H "Content-Type:application/json" -d "{\"templateId\"=\"$TEMPLATEID\"&\"originX\"=100&\"originY\"=100" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/template-instance
+       	curl -u admin:admin -i -H "Content-Type:application/json" -d "{\"templateId\":\"$TEMPLATEID\",\"originX\":100,\"originY\":100}" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/template-instance
 }
 
 # Start NIFI Flow
