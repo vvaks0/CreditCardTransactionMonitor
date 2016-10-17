@@ -3,6 +3,7 @@
 "nifi.initial_mem" : "512m",
 "nifi.install_dir" : "/opt",
 "nifi.max_mem" : "512m",
+"nifi.node.protocol.port" : "9088",
 "nifi.port" : "9090",
 "nifi.setup_prebuilt" : "true"
 }
