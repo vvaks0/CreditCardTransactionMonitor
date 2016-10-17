@@ -191,24 +191,6 @@ installNifiService () {
        	done
 }
 
-startNifiService () {
-       	echo "*********************************Starting NIFI Service..."
-       	# Start NIFI service
-       	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo":  	{"context" :"Start NIFI"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-       	echo "*********************************AMBARI TaskID " $TASKID
-       	sleep 2
-       	LOOPESCAPE="false"
-       	until [ "$LOOPESCAPE" == true ]; do
-       	TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-       	if [ "$TASKSTATUS" == COMPLETED ]; then
-            LOOPESCAPE="true"
-       	fi
-       	echo "*********************************Task Status" $TASKSTATUS
-       	sleep 2
-       	done
-       	echo "*********************************NIFI Service Started..."
-}
-
 waitForNifiServlet () {
        	LOOPESCAPE="false"
        	until [ "$LOOPESCAPE" == true ]; do
