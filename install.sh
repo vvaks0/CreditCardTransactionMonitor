@@ -63,7 +63,7 @@ waitForService () {
 
 stopService () {
        	SERVICE=$1
-       	SERVICE_STATUS=$(getServiceStatus SERVICE)
+       	SERVICE_STATUS=$(getServiceStatus $SERVICE)
        	echo "*********************************Stopping Service $SERVICE..."
        	if [ "$SERVICE_STATUS" == STARTED ]; then
         TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop $SERVICE"}, "ServiceInfo": {"state": "INSTALLED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
@@ -87,9 +87,9 @@ stopService () {
 
 startService (){
        	SERVICE=$1
-       	SERVICE_STATUS=$(getServiceStatus SERVICE)
+       	SERVICE_STATUS=$(getServiceStatus $SERVICE)
        		echo "*********************************Starting Service $SERVICE..."
-       	if [ "$SERVICE_STATUS" == Stopped ]; then
+       	if [ "$SERVICE_STATUS" == INSTALLED ]; then
         TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE"}, "ServiceInfo": {"state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
         echo "*********************************Start $SERVICE TaskID $TASKID"
@@ -418,7 +418,7 @@ echo "*********************************Creating Kafka Topics..."
 /usr/hdp/current/kafka-broker/bin/kafka-topics.sh --create --zookeeper $AMBARI_HOST:2181 --replication-factor 1 --partitions 1 --topic IncomingTransactions
 /usr/hdp/current/kafka-broker/bin/kafka-topics.sh --create --zookeeper $AMBARI_HOST:2181 --replication-factor 1 --partitions 1 --topic CustomerTransactionValidation
 
-HBASE_STATUS=getServiceStatus HBASE
+HBASE_STATUS=$(getServiceStatus HBASE)
 echo "*********************************Checking HBASE status..."
 if ! [[ $HBASE_STATUS == STARTED || $HBASE_STATUS == INSTALLED ]]; then
        	echo "*********************************HBASE is in a transitional state, waiting..."
@@ -432,7 +432,7 @@ else
        	echo "*********************************HBASE Service Started..."
 fi
 
-STORM_STATUS=getServiceStatus STORM
+STORM_STATUS=$(getServiceStatus STORM)
 echo "*********************************Checking STORM status..."
 if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM is in a transitional state, waiting..."
