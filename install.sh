@@ -3,9 +3,7 @@
 #Get Kafka Broker Id per Topic - zookeeper-client get /brokers/topics/IncomingTransactions/partitions/0/state |grep leader |grep -Po '"leader":([0-9])+'|grep -Po '([0-9])+'
 #Get Kafka Broker per Id - zookeeper-client get /brokers/ids/1001|grep -Po '"host":"([a-zA-Z\-0-9.]+)'|grep -Po ':"([a-zA-Z\-0-9.]+)'|grep -Po '([a-zA-Z\-0-9.]+)'
 #Get Atlas Host - /var/lib/ambari-server/resources/scripts/configs.sh get vvaks-1 CreditFraudDemo application-properties |grep "atlas.rest.address"|grep -Po '//([a-zA-z\-0-9.])+'|grep -Po '([a-zA-z\-0-9.])+'
-#Get Kafka Broker Ambari - curl -u admin:admin -X GET http://vvaks-1:8080/api/v1/clusters/CreditFraudDemo/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)'
 
-#Get curl -u admin:admin -i -X GET http://vvaks-1:9090/nifi-api/process-groups/root/processors|grep -Po '"component":{"id":"([a-zA-Z0-9\-]+)'|grep -Po ':"([a-zA-Z0-9\-]+)'|grep -Po '([a-zA-Z0-9\-]+)'
 
 AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
@@ -344,21 +342,21 @@ cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
 # Build from source
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
 cd $ROOT_PATH/CreditCardTransactionMonitor
-#mvn clean package
+mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
 
 # Build from source
 echo "*********************************Building Credit Card Transaction Simulator"
 cd $ROOT_PATH/CreditCardTransactionSimulator
-#mvn clean package
+mvn clean package
 cp -vf target/CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar $ROOT_PATH
 
 # Build from source
 echo "*********************************Building Nifi Atlas Reporter"
+cd $ROOT_PATH
 git clone https://github.com/vakshorton/NifiAtlasLineageReporter.git
 cd $ROOT_PATH/NifiAtlasLineageReporter
-#mvn clean install
-
+mvn clean install
 
 NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
