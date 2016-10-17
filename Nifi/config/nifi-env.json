@@ -1,0 +1,3 @@
+"properties" : {
+"content" : "\n#!/bin/sh\n\n# The java implementation to use.\nexport JAVA_HOME={{jdk64_home}}\n\nexport NIFI_HOME={{nifi_dir}}\n\n#The directory for the NiFi pid file\nexport NIFI_PID_DIR=\"{{nifi_pid_dir}}\"\n\n#The directory for NiFi log files\nexport NIFI_LOG_DIR=\"{{nifi_log_dir}}\""
+}

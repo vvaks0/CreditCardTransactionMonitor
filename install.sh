@@ -29,9 +29,9 @@ serviceExists () {
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"status" : ' | grep -Po '([0-9]+)')
 
        	if [ "$SERVICE_STATUS" == 404 ]; then
-       		return 0
+       		echo 0
        	else
-       		return 1
+       		echo 1
        	fi
 }
 
@@ -370,8 +370,21 @@ else
        	echo "*********************************NIFI Service Already Installed"
 fi
 
-echo "*********************************Deploying NIFI Template..."
+NIFI_STATUS=$(getServiceStatus NIFI)
+echo "*********************************Checking NIFI status..."
+if ! [[ $NIFI_STATUS == STARTED || $NIFI_STATUS == INSTALLED ]]; then
+       	echo "*********************************NIFI is in a transitional state, waiting..."
+       	waitForService NIFI
+       	echo "*********************************NIFI has entered a ready state..."
+fi
+
+if [[ $NIFI_STATUS == STOPPED ]]; then
+       	startService NIFI
+else
+       	echo "*********************************NIFI Service Started..."
+fi
 waitForNifiServlet
+echo "*********************************Deploying NIFI Template..."
 deployTemplateToNifi
 
 echo "*********************************Starting NIFI Flow ..."
