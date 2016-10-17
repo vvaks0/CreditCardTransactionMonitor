@@ -390,6 +390,8 @@ deployTemplateToNifi
 echo "*********************************Starting NIFI Flow ..."
 startNifiFlow
 
+mkdir /var/run/nifi
+chown nifi:nifi /var/run/nifi
 NIFI_HOME=$(ls /opt/|grep nifi)
 if [ -z "$NIFI_HOME" ]; then
         NIFI_HOME=$(ls /opt/|grep HDF)
