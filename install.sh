@@ -378,7 +378,7 @@ if ! [[ $NIFI_STATUS == STARTED || $NIFI_STATUS == INSTALLED ]]; then
        	echo "*********************************NIFI has entered a ready state..."
 fi
 
-if [[ $NIFI_STATUS == STOPPED ]]; then
+if [[ $NIFI_STATUS == INSTALLED ]]; then
        	startService NIFI
 else
        	echo "*********************************NIFI Service Started..."
@@ -407,7 +407,7 @@ if ! [[ $KAFKA_STATUS == STARTED || $KAFKA_STATUS == INSTALLED ]]; then
        	echo "*********************************KAFKA has entered a ready state..."
 fi
 
-if [[ $KAFKA_STATUS == STOPPED ]]; then
+if [[ $KAFKA_STATUS == INSTALLED ]]; then
        	startService KAFKA
 else
        	echo "*********************************KAFKA Service Started..."
@@ -426,7 +426,7 @@ if ! [[ $HBASE_STATUS == STARTED || $HBASE_STATUS == INSTALLED ]]; then
        	echo "*********************************HBASE has entered a ready state..."
 fi
 
-if [[ $HBASE_STATUS == STOPPED ]]; then
+if [[ $HBASE_STATUS == INSTALLED ]]; then
        	startService HBASE
 else
        	echo "*********************************HBASE Service Started..."
@@ -440,7 +440,7 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
-if [[ $STORM_STATUS == STOPPED ]]; then
+if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM
 else
        	echo "*********************************STORM Service Started..."
