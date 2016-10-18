@@ -368,9 +368,6 @@ mvn clean install
 NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
-       	mkdir /var/run/nifi
-       	chmod 777 /var/run/nifi
-       	chown nifi:nifi /var/run/nifi
        	getLatestNifiBits
        	ambari-server restart
        	waitForAmbari
