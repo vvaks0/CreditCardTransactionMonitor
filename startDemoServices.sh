@@ -41,7 +41,7 @@ waitForService () {
 startService (){
        	SERVICE=$1
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
-       		echo "*********************************Starting Service $SERVICE..."
+       		echo "*********************************Starting Service $SERVICE ..."
        	if [ "$SERVICE_STATUS" == INSTALLED ]; then
         TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE"}, "ServiceInfo": {"state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
@@ -62,6 +62,23 @@ startService (){
        	fi
 }
 
+
+#Start ZooKeeper
+ZOOKEEPER_STATUS=$(getServiceStatus ZOOKEEPER)
+echo "*********************************Checking KAFKA status..."
+if ! [[ $ZOOKEEPER_STATUS == STARTED || $ZOOKEEPER_STATUS == INSTALLED ]]; then
+       	echo "*********************************ZOOKEEPER is in a transitional state, waiting..."
+       	waitForService ZOOKEEPER
+       	echo "*********************************ZOOKEEPER has entered a ready state..."
+fi
+
+if [[ $ZOOKEEPER == INSTALLED ]]; then
+       	startService ZOOKEEPER
+else
+       	echo "*********************************ZOOKEEPER Service Started..."
+fi
+
+sleep 1
 #Start Kafka
 KAFKA_STATUS=$(getServiceStatus KAFKA)
 echo "*********************************Checking KAFKA status..."

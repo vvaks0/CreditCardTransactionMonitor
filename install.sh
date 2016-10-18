@@ -64,7 +64,7 @@ waitForService () {
 stopService () {
        	SERVICE=$1
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
-       	echo "*********************************Stopping Service $SERVICE..."
+       	echo "*********************************Stopping Service $SERVICE ..."
        	if [ "$SERVICE_STATUS" == STARTED ]; then
         TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop $SERVICE"}, "ServiceInfo": {"state": "INSTALLED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
@@ -80,7 +80,7 @@ stopService () {
             sleep 2
         done
         echo "*********************************$SERVICE Service Stopped..."
-       	elif [ "$SERVICE_TATUS" == INSTALLED ]; then
+       	elif [ "$SERVICE_STATUS" == INSTALLED ]; then
        	echo "*********************************$SERVICE Service Stopped..."
        	fi
 }
@@ -88,7 +88,7 @@ stopService () {
 startService (){
        	SERVICE=$1
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
-       		echo "*********************************Starting Service $SERVICE..."
+       		echo "*********************************Starting Service $SERVICE ..."
        	if [ "$SERVICE_STATUS" == INSTALLED ]; then
         TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE"}, "ServiceInfo": {"state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
@@ -104,7 +104,7 @@ startService (){
             sleep 2
         done
         echo "*********************************$SERVICE Service Started..."
-       	elif [ "$SERVICE_TATUS" == STARTED ]; then
+       	elif [ "$SERVICE_STATUS" == STARTED ]; then
        	echo "*********************************$SERVICE Service Started..."
        	fi
 }
@@ -165,7 +165,7 @@ installNifiService () {
         sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-flow-env $ROOT_PATH/Nifi/config/nifi-flow-env.json
        	sleep 2
-       	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
+       	#/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
        	sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-properties-env $ROOT_PATH/Nifi/config/nifi-properties-env.json
 
