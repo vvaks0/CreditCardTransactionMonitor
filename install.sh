@@ -261,7 +261,7 @@ enablePhoenix () {
 }
 
 configureYarnMemory () {
-	YARN_MEM_MAX=$(/var/lib/ambari-server/resources/scripts/configs.sh get $AMBARI_HOST $CLUSTER_NAME yarn-site | grep "yarn.scheduler.maximum-allocation-mb"|grep -Po ': "([0-9]+)'|grep -Po '([0-9]+)')
+	YARN_MEM_MAX=$(/var/lib/ambari-server/resources/scripts/configs.sh get $AMBARI_HOST $CLUSTER_NAME yarn-site | grep '"yarn.scheduler.maximum-allocation-mb"'|grep -Po ': "([0-9]+)'|grep -Po '([0-9]+)')
 	echo "*********************************yarn.scheduler.maximum-allocation-mb is set to $YARN_MEM_MAX MB"
 	if [[ $YARN_MEM_MAX -lt 6000 ]]; then
 		echo "*********************************Changing YARN Container Memory Size..."
