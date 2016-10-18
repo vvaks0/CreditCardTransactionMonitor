@@ -72,7 +72,7 @@ if ! [[ $ZOOKEEPER_STATUS == STARTED || $ZOOKEEPER_STATUS == INSTALLED ]]; then
        	echo "*********************************ZOOKEEPER has entered a ready state..."
 fi
 
-if [[ $ZOOKEEPER == INSTALLED ]]; then
+if [[ $ZOOKEEPER_STATUS == INSTALLED ]]; then
        	startService ZOOKEEPER
 else
        	echo "*********************************ZOOKEEPER Service Started..."

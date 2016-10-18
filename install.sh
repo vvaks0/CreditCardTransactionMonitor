@@ -249,15 +249,15 @@ startNifiFlow () {
 
 enablePhoenix () {
 	echo "*********************************Enabling Phoenix..."
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"phoenix.functions.allowUserDefinedFunctions"' '"true”'
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site phoenix.functions.allowUserDefinedFunctions true
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.defaults.for.version.skip"' '"true"'
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.defaults.for.version.skip true
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.regionserver.wal.codec"' '"org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec"'
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.regionserver.wal.codec org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.region.server.rpc.scheduler.factory.class"' '"org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory"'
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.region.server.rpc.scheduler.factory.class org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.rpc.controllerfactory.class"' '"org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory"'
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.rpc.controllerfactory.class org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory
 }
 
 configureYarnMemory () {
@@ -273,14 +273,14 @@ configureYarnMemory () {
 
 getKafkaBroker () {
        	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
-       	echo $(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
+       	
        	echo $KAFKA_BROKER
 }
 
 getAtlasHost () {
        	ATLAS_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
-       	echo $(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
-       	echo $ATLAS_SERVER
+       	
+       	echo $ATLAS_HOST
 }
 
 ZK_HOST=$AMBARI_HOST
