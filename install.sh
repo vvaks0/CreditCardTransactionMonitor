@@ -248,6 +248,30 @@ startNifiFlow () {
        	done
 }
 
+enablePhoenix () {
+	echo "*********************************Enabling Phoenix..."
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "phoenix.functions.allowUserDefinedFunctions" "true”
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.defaults.for.version.skip" : "true",
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.regionserver.wal.codec" "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.region.server.rpc.scheduler.factory.class" "org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.rpc.controllerfactory.class" "org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory"
+}
+
+configureYarnMemory () {
+	YARN_MEM_MAX=$(/var/lib/ambari-server/resources/scripts/configs.sh get vvaks Demo yarn-site | grep "yarn.scheduler.maximum-allocation-mb"|grep -Po ': "([0-9]+)"'|grep -Po '([0-9]+)')
+	echo "*********************************yarn.scheduler.maximum-allocation-mb is set to $YARN_MEM_MAX MB"
+	if [[ $YARN_MEM_MAX -lt 6000 ]]; then
+		echo "*********************************Changing YARN Container Memory Size..."
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME yarn-site "yarn.scheduler.maximum-allocation-mb" "6144"
+		sleep 1	
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME yarn-site "yarn.nodemanager.resource.memory-mb" "6144"
+	fi	
+}
+
 getKafkaBroker () {
        	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
        	echo $(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
@@ -430,15 +454,18 @@ else
        	echo "*********************************STORM Service Started..."
 fi
 
-# Deploy Storm Topology
-echo "*********************************Deploying Storm Topology..."
-storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
-
 # Download Docker Images
 echo "*********************************Downloading Docker Images for UI..."
 service docker start
 docker pull vvaks/transactionmonitorui
 docker pull vvaks/cometd
+
+echo "*********************************Checking Yarn and Phoenix Configurations..."
+configureYarnMemory
+enablePhoenix
+echo "*********************************Setting Ambari-Server to Start on Boot..."
+chkconfig --add docker
+chkconfig docker on
 
 # Reboot to refresh configuration
 reboot now

@@ -5,7 +5,7 @@
     "components": {
             "TRANSACTIONMONITORUI": {
                 "transactionmonitorui.commandPath": "/usr/bin/docker", 
-                "transactionmonitorui.options":"-d -e MAP_API_KEY= --net=host",
+                "transactionmonitorui.options":"-d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST --net=host",
                 "trabsactionmonitorui.statusCommand":"docker inspect -f {{.State.Running}} ${CONTAINER_ID} | grep true"
             },
 	    "COMETD": {

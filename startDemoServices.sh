@@ -157,9 +157,16 @@ else
        	echo "*********************************STORM Service Started..."
 fi
 
+# Deploy Storm Topology
+echo "*********************************Deploying Storm Topology..."
+storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
+
 # Clear Slider working directory
 sudo -u hdfs hadoop fs -rm -R /user/root/.slider/cluster
 # Ensure docker service is running
 service docker start
 # Start UI servlet on Yarn using Slider
 slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
+
+echo "*********************************Wait 30 seconds for Application to Initialize..."
+sleep 30
