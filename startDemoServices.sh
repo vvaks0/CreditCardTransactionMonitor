@@ -152,7 +152,7 @@ if ! [[ $ATLAS_STATUS == STARTED || $ATLAS_STATUS == INSTALLED ]]; then
        	echo "*********************************ATLAS has entered a ready state..."
 fi
 
-if [[ ATLAS_STATUS == INSTALLED ]]; then
+if [[ $ATLAS_STATUS == INSTALLED ]]; then
        	startService ATLAS
 else
        	echo "*********************************ATLAS Service Started..."
@@ -168,7 +168,7 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
-if [[ STORM_STATUS == INSTALLED ]]; then
+if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM
 else
        	echo "*********************************STORM Service Started..."
