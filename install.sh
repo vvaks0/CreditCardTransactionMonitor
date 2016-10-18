@@ -366,6 +366,9 @@ mvn clean install
 NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
+       	mkdir /var/run/nifi
+       	chmod 777 /var/run/nifi
+       	chown nifi:nifi /var/run/nifi
        	getLatestNifiBits
        	ambari-server restart
        	waitForAmbari
@@ -395,8 +398,6 @@ deployTemplateToNifi
 echo "*********************************Starting NIFI Flow ..."
 startNifiFlow
 
-mkdir /var/run/nifi
-chown nifi:nifi /var/run/nifi
 NIFI_HOME=$(ls /opt/|grep nifi)
 if [ -z "$NIFI_HOME" ]; then
         NIFI_HOME=$(ls /opt/|grep HDF)
