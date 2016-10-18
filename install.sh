@@ -165,10 +165,9 @@ installNifiService () {
         sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-flow-env $ROOT_PATH/Nifi/config/nifi-flow-env.json
        	sleep 2
-       	#/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
-       	sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-properties-env $ROOT_PATH/Nifi/config/nifi-properties-env.json
-
+       	#sleep 2
+		#/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
        	sleep 2
        	echo "*********************************Adding NIFI MASTER role to Host..."
        	# Add NIFI Master role to Sandbox host
@@ -252,7 +251,7 @@ enablePhoenix () {
 	echo "*********************************Enabling Phoenix..."
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "phoenix.functions.allowUserDefinedFunctions" "true”
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.defaults.for.version.skip" : "true",
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.defaults.for.version.skip" "true"
 	sleep 1
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME "hbase.regionserver.wal.codec" "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec"
 	sleep 1
