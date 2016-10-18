@@ -12,6 +12,10 @@ else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
 
+mkdir /var/run/nifi
+chmod 777 /var/run/nifi
+chown nifi:nifi /var/run/nifi
+
 getServiceStatus () {
        	SERVICE=$1
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
