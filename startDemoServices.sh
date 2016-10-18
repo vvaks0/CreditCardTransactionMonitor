@@ -62,7 +62,38 @@ startService (){
        	fi
 }
 
+#Start HDFS
+HDFS_STATUS=$(getServiceStatus HDFS)
+echo "*********************************Checking HDFS status..."
+if ! [[ $HDFS_STATUS == STARTED || $HDFS_STATUS == INSTALLED ]]; then
+       	echo "*********************************HDFS is in a transitional state, waiting..."
+       	waitForService HDFS
+       	echo "*********************************HDFS has entered a ready state..."
+fi
 
+if [[ $HDFS_STATUS == INSTALLED ]]; then
+       	startService HDFS
+else
+       	echo "*********************************HDFS Service Started..."
+fi
+
+sleep 1
+#Start YARN
+YARN_STATUS=$(getServiceStatus YARN)
+echo "*********************************Checking YARN status..."
+if ! [[ $YARN_STATUS == STARTED || $YARN_STATUS == INSTALLED ]]; then
+       	echo "*********************************YARN is in a transitional state, waiting..."
+       	waitForService YARN
+       	echo "*********************************YARN has entered a ready state..."
+fi
+
+if [[ $YARN_STATUS == INSTALLED ]]; then
+       	startService YARN
+else
+       	echo "*********************************YARN Service Started..."
+fi
+
+sleep 1
 #Start ZooKeeper
 ZOOKEEPER_STATUS=$(getServiceStatus ZOOKEEPER)
 echo "*********************************Checking KAFKA status..."
@@ -76,6 +107,38 @@ if [[ $ZOOKEEPER_STATUS == INSTALLED ]]; then
        	startService ZOOKEEPER
 else
        	echo "*********************************ZOOKEEPER Service Started..."
+fi
+
+sleep 1
+#Start MAPREDUCE2
+MAPREDUCE2_STATUS=$(getServiceStatus MAPREDUCE2)
+echo "*********************************Checking HIVE status..."
+if ! [[ $MAPREDUCE2_STATUS == STARTED || $MAPREDUCE2_STATUS == INSTALLED ]]; then
+       	echo "*********************************MAPREDUCE2 is in a transitional state, waiting..."
+       	waitForService MAPREDUCE2
+       	echo "*********************************MAPREDUCE2 has entered a ready state..."
+fi
+
+if [[ $MAPREDUCE2_STATUS == INSTALLED ]]; then
+       	startService MAPREDUCE2
+else
+       	echo "*********************************MAPREDUCE2 Service Started..."
+fi
+
+sleep 1
+#Start Hive
+HIVE_STATUS=$(getServiceStatus HIVE)
+echo "*********************************Checking HIVE status..."
+if ! [[ $HIVE_STATUS == STARTED || $HIVE_STATUS == INSTALLED ]]; then
+       	echo "*********************************HIVE is in a transitional state, waiting..."
+       	waitForService HIVE
+       	echo "*********************************HIVE has entered a ready state..."
+fi
+
+if [[ $HIVE_STATUS == INSTALLED ]]; then
+       	startService HIVE
+else
+       	echo "*********************************HIVE Service Started..."
 fi
 
 sleep 1
@@ -144,7 +207,7 @@ fi
 
 sleep 1
 # Start Atlas
-ATLAS_STATUS=$(getServiceStatus STORM)
+ATLAS_STATUS=$(getServiceStatus ATLAS)
 echo "*********************************Checking ATLAS status..."
 if ! [[ $ATLAS_STATUS == STARTED || $ATLAS_STATUS == INSTALLED ]]; then
        	echo "*********************************ATLAS is in a transitional state, waiting..."
@@ -178,6 +241,7 @@ fi
 echo "*********************************Deploying Storm Topology..."
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
 
+echo "*********************************Deploying Application Container to YARN..."
 # Clear Slider working directory
 sudo -u hdfs hadoop fs -rm -R /user/root/.slider/cluster
 # Ensure docker service is running

@@ -248,6 +248,8 @@ startNifiFlow () {
 }
 
 enablePhoenix () {
+	echo "*********************************Installing Phoenix Binaries..."
+	yum install -y phoenix
 	echo "*********************************Enabling Phoenix..."
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site phoenix.functions.allowUserDefinedFunctions true
 	sleep 1
@@ -464,8 +466,8 @@ echo "*********************************Checking Yarn and Phoenix Configurations.
 configureYarnMemory
 enablePhoenix
 echo "*********************************Setting Ambari-Server to Start on Boot..."
-chkconfig --add docker
-chkconfig docker on
+chkconfig --add ambari-server
+chkconfig ambari-server on
 
 # Reboot to refresh configuration
 reboot now
