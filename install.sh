@@ -249,15 +249,15 @@ startNifiFlow () {
 
 enablePhoenix () {
 	echo "*********************************Enabling Phoenix..."
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site "phoenix.functions.allowUserDefinedFunctions" "true”
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"phoenix.functions.allowUserDefinedFunctions"' '"true”'
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site "hbase.defaults.for.version.skip" "true"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.defaults.for.version.skip"' '"true"'
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site "hbase.regionserver.wal.codec" "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.regionserver.wal.codec"' '"org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec"'
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site "hbase.region.server.rpc.scheduler.factory.class" "org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.region.server.rpc.scheduler.factory.class"' '"org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory"'
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site "hbase.rpc.controllerfactory.class" "org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site '"hbase.rpc.controllerfactory.class"' '"org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory"'
 }
 
 configureYarnMemory () {
