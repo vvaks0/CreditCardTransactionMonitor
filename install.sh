@@ -4,11 +4,11 @@
 #Get Kafka Broker per Id - zookeeper-client get /brokers/ids/1001|grep -Po '"host":"([a-zA-Z\-0-9.]+)'|grep -Po ':"([a-zA-Z\-0-9.]+)'|grep -Po '([a-zA-Z\-0-9.]+)'
 #Get Atlas Host - /var/lib/ambari-server/resources/scripts/configs.sh get vvaks-1 CreditFraudDemo application-properties |grep "atlas.rest.address"|grep -Po '//([a-zA-z\-0-9.])+'|grep -Po '([a-zA-z\-0-9.])+'
 
-
-AMBARI_HOST=$(hostname -f)
+export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 
-CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "([a-zA-Z]+)'|grep -Po '[a-zA-Z]+')
+
+export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "([a-zA-Z]+)'|grep -Po '[a-zA-Z]+')
 
 if [[ -z $CLUSTER_NAME ]]; then
         echo "Could not connect to Ambari Server. Please run the install script on the same host where Ambari Server is installed."
@@ -17,11 +17,11 @@ else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
 
-ROOT_PATH=$(pwd)
+export ROOT_PATH=$(pwd)
 echo "*********************************ROOT PATH IS: $ROOT_PATH"
 
-VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
-INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
+export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
+export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
 echo "*********************************HDP VERSION IS: $VERSION"
 
 serviceExists () {

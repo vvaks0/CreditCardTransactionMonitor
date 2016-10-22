@@ -1,12 +1,36 @@
 #!/bin/bash
 
+export AMBARI_HOST=$(hostname -f)
+echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
+
+waitForAmbari () {
+       	# Wait for Ambari
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+        TASKSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep -Po 'OK')
+        if [ "$TASKSTATUS" == OK ]; then
+                LOOPESCAPE="true"
+                TASKSTATUS="READY"
+        else
+               	AUTHSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
+               	if [ "$AUTHSTATUS" == 403 ]; then
+               	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
+               	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
+               	exit 403
+               	else
+                TASKSTATUS="PENDING"
+               	fi
+       	fi
+       	echo "Waiting for Ambari..."
+        echo "Ambari Status... " $TASKSTATUS
+        sleep 2
+       	done
+}
+
 ambari-server start
 waitForAmbari
 
-AMBARI_HOST=$(hostname -f)
-echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
-
-CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "([a-zA-Z]+)'|grep -Po '[a-zA-Z]+')
+export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "([a-zA-Z]+)'|grep -Po '[a-zA-Z]+')
 
 if [[ -z $CLUSTER_NAME ]]; then
         echo "Could not connect to Ambari Server. Please run the install script on the same host where Ambari Server is installed."
@@ -67,30 +91,6 @@ startService (){
        	elif [ "$SERVICE_TATUS" == STARTED ]; then
        	echo "*********************************$SERVICE Service Started..."
        	fi
-}
-
-waitForAmbari () {
-       	# Wait for Ambari
-       	LOOPESCAPE="false"
-       	until [ "$LOOPESCAPE" == true ]; do
-        TASKSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep -Po 'OK')
-        if [ "$TASKSTATUS" == OK ]; then
-                LOOPESCAPE="true"
-                TASKSTATUS="READY"
-        else
-               	AUTHSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
-               	if [ "$AUTHSTATUS" == 403 ]; then
-               	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
-               	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
-               	exit 403
-               	else
-                TASKSTATUS="PENDING"
-               	fi
-       	fi
-       	echo "Waiting for Ambari..."
-        echo "Ambari Status... " $TASKSTATUS
-        sleep 2
-       	done
 }
 
 #Start HDFS
