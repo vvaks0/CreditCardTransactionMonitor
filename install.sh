@@ -479,6 +479,6 @@ enablePhoenix
 echo "*********************************Setting Ambari-Server to Start on Boot..."
 chkconfig --add ambari-server
 chkconfig ambari-server on
-
+echo "*********************************Installation Complete..."
 # Reboot to refresh configuration
 #reboot now
