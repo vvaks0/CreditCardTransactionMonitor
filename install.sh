@@ -38,6 +38,9 @@ export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]
 export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
 echo "*********************************HDP VERSION IS: $VERSION"
 
+export HADOOP_USER_NAME=hdfs
+echo "*********************************HADOOP_USER_NAME set to HDFS"
+
 serviceExists () {
        	SERVICE=$1
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"status" : ' | grep -Po '([0-9]+)')
@@ -345,8 +348,8 @@ service docker start
 chkconfig --add docker
 chkconfig docker on
 echo " 				  *****************Create /root HDFS folder for Slider..."
-sudo -u hdfs hadoop fs -mkdir /user/root/
-sudo -u hdfs hadoop fs -chown root:hdfs /user/root/
+hadoop fs -mkdir /user/root/
+hadoop fs -chown root:hdfs /user/root/
 
 #Create Docker working folder
 echo " 				  *****************Creating Docker Home Folder..."
@@ -461,6 +464,12 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
+if [[ $STORM_STATUS == STARTED ]]; then
+       	stopService STORM
+else
+       	echo "*********************************STORM Service Stopped..."
+fi
+
 if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM
 else
@@ -476,9 +485,11 @@ docker pull vvaks/cometd
 echo "*********************************Checking Yarn and Phoenix Configurations..."
 configureYarnMemory
 enablePhoenix
+stopService HBASE
+startService HBASE
 echo "*********************************Setting Ambari-Server to Start on Boot..."
 chkconfig --add ambari-server
 chkconfig ambari-server on
-echo "*********************************Installation Complete..."
+echo "*********************************Installation Complete... reboot to refresh config"
 # Reboot to refresh configuration
 #reboot now
