@@ -5,6 +5,20 @@
 #Get Atlas Host - /var/lib/ambari-server/resources/scripts/configs.sh get vvaks-1 CreditFraudDemo application-properties |grep "atlas.rest.address"|grep -Po '//([a-zA-z\-0-9.])+'|grep -Po '([a-zA-z\-0-9.])+'
 
 #export AMBARI_HOST=$(cat /etc/ambari-agent/conf/ambari-agent.ini| grep hostname= |grep -Po '([0-9.]+)')
+
+#cd /usr
+#wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u101-b13/jdk-8u101-linux-x64.tar.gz"
+#tar -vxzf jdk-8u101-linux-x64.tar.gz
+#alternatives --install /usr/bin/java java /usr/jdk1.8.0_101/bin/java 3
+#alternatives --install /usr/bin/javac javac /usr/jdk1.8.0_101/bin/javac 3
+#alternatives --install /usr/bin/jar jar /usr/jdk1.8.0_101/bin/jar 3
+#alternatives --set java /usr/jdk1.8.0_101/bin/java
+#alternatives --set javac /usr/jdk1.8.0_101/bin/javac
+#alternatives --set jar /usr/jdk1.8.0_101/bin/jar
+#export JAVA_HOME=/usr/jdk1.8.0_101
+#echo "export JAVA_HOME=/usr/jdk1.8.0_101" >> /etc/bashrc
+
+
 export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 
