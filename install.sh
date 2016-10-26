@@ -291,13 +291,13 @@ configureYarnMemory () {
 }
 
 getKafkaBroker () {
-       	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
+       	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
        	echo $KAFKA_BROKER
 }
 
 getAtlasHost () {
-       	ATLAS_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-.]+)'|grep -Po '([a-zA-Z0-9\-.]+)')
+       	ATLAS_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
        	echo $ATLAS_HOST
 }
@@ -313,6 +313,7 @@ export COMETD_HOST=$COMETD_HOST
 env
 
 echo "export ZK_HOST=$ZK_HOST" >> /etc/bashrc
+echo "export KAFKA_BROKER=$KAFKA_BROKER" >> /etc/bashrc
 echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
 echo "export COMETD_HOST=$COMETD_HOST" >> /etc/bashrc
 

@@ -27,6 +27,18 @@ waitForAmbari () {
        	done
 }
 
+getKafkaBroker () {
+       	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $KAFKA_BROKER
+}
+
+getAtlasHost () {
+       	ATLAS_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $ATLAS_HOST
+}
+
 ambari-server start
 waitForAmbari
 
@@ -38,6 +50,16 @@ if [[ -z $CLUSTER_NAME ]]; then
 else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
+
+ZK_HOST=$AMBARI_HOST
+export ZK_HOST=$ZK_HOST
+KAFKA_BROKER=$(getKafkaBroker)
+export KAFKA_BROKER=$KAFKA_BROKER
+ATLAS_HOST=$(getAtlasHost)
+export ATLAS_HOST=$ATLAS_HOST
+COMETD_HOST=$AMBARI_HOST
+export COMETD_HOST=$COMETD_HOST
+env
 
 mkdir /var/run/nifi
 chmod 777 /var/run/nifi
