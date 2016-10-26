@@ -465,6 +465,7 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
+echo "*********************************Stoping STORM Service..."
 STORM_STATUS=$(getServiceStatus STORM)
 if [[ $STORM_STATUS == STARTED ]]; then
        	stopService STORM
@@ -472,6 +473,7 @@ else
        	echo "*********************************STORM Service Stopped..."
 fi
 
+echo "*********************************Starting STORM Service..."
 STORM_STATUS=$(getServiceStatus STORM)
 if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM

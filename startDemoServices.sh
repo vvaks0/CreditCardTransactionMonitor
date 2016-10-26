@@ -295,12 +295,11 @@ echo "*********************************Deploying Storm Topology..."
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
 
 echo "*********************************Deploying Application Container to YARN..."
-# Clear Slider working directory
-hadoop fs -rm -R /user/root/.slider/cluster
-
 # Ensure docker service is running
 service docker start
 
+# Clear Slider working directory
+#hadoop fs -rm -R /user/root/.slider/cluster
 # Start UI servlet on Yarn using Slider
 #slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
 
