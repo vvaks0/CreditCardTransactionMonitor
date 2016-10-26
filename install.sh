@@ -464,12 +464,14 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
+STORM_STATUS=$(getServiceStatus STORM)
 if [[ $STORM_STATUS == STARTED ]]; then
        	stopService STORM
 else
        	echo "*********************************STORM Service Stopped..."
 fi
 
+STORM_STATUS=$(getServiceStatus STORM)
 if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM
 else
@@ -490,6 +492,6 @@ startService HBASE
 echo "*********************************Setting Ambari-Server to Start on Boot..."
 chkconfig --add ambari-server
 chkconfig ambari-server on
-echo "*********************************Installation Complete... reboot to refresh config"
+echo "*********************************Installation Complete... "
 # Reboot to refresh configuration
 #reboot now

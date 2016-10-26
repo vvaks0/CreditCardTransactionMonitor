@@ -274,11 +274,18 @@ storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.horton
 
 echo "*********************************Deploying Application Container to YARN..."
 # Clear Slider working directory
-sudo -u hdfs hadoop fs -rm -R /user/root/.slider/cluster
+hadoop fs -rm -R /user/root/.slider/cluster
+
 # Ensure docker service is running
 service docker start
+
 # Start UI servlet on Yarn using Slider
-slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
+#slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
+
+#Start UI servlet in Docker
+docker run -d --net=host vvaks/cometd
+docker run -d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST --net=host vvaks/transactionmonitorui
 
 echo "*********************************Wait 30 seconds for Application to Initialize..."
 sleep 30
+echo "*********************************Access the UI at http://$AMBARI_HOST:8090/TransactionMonitorUI/CustomerOverview"
