@@ -261,21 +261,21 @@ else
 fi
 
 sleep 1
-AMBARI_INFRA_STATUS=$(serviceExists AMBARI_INFRA)
-	if [[ "$NIFI_SERVICE_PRESENT" == 1 ]]; then
-		# Start AMBARI_INFRA
-		AMBARI_INFRA_STATUS=$(getServiceStatus AMBARI_INFRA)
-		echo "*********************************Checking AMBARI_INFRA status..."
-		if ! [[ $AMBARI_INFRA_STATUS == STARTED || $AMBARI_INFRA_STATUS == INSTALLED ]]; then
-       		echo "*********************************AMBARI_INFRA is in a transitional state, waiting..."
-       		waitForService AMBARI_INFRA
-       		echo "*********************************AMBARI_INFRA has entered a ready state..."
-		fi
+AMBARI_INFRA_PRESENT=$(serviceExists AMBARI_INFRA)
+if [[ "$AMBARI_INFRA_PRESENT" == 1 ]]; then
+	# Start AMBARI_INFRA
+	AMBARI_INFRA_STATUS=$(getServiceStatus AMBARI_INFRA)
+	echo "*********************************Checking AMBARI_INFRA status..."
+	if ! [[ $AMBARI_INFRA_STATUS == STARTED || $AMBARI_INFRA_STATUS == INSTALLED ]]; then
+       	echo "*********************************AMBARI_INFRA is in a transitional state, waiting..."
+		waitForService AMBARI_INFRA
+       	echo "*********************************AMBARI_INFRA has entered a ready state..."
+	fi
 
-		if [[ $AMBARI_INFRA_STATUS == INSTALLED ]]; then
-       		startService AMBARI_INFRA
-		else
-       		echo "*********************************AMBARI_INFRA Service Started..."
+	if [[ $AMBARI_INFRA_STATUS == INSTALLED ]]; then
+       	startService AMBARI_INFRA
+	else
+       	echo "*********************************AMBARI_INFRA Service Started..."
 	fi
 else
 	echo "*********************************AMBARI_INFRA is not present, skipping..."
