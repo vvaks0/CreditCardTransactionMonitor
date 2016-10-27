@@ -67,6 +67,18 @@ startService (){
        	fi
 }
 
+getNameNodeHost () {
+       	NAMENODE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HDFS/components/NAMENODE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $NAMENODE_HOST
+}
+
+getMetaStoreHost () {
+       	METASTORE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_METASTORE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $METASTORE_HOST
+}
+
 getKafkaBroker () {
        	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
@@ -80,12 +92,17 @@ getAtlasHost () {
 }
 
 #Need to recreate the Environment Variables since shell may have chnaged and BashRC script may not have loaded
+NAMENODE_HOST=$(getNameNodeHost)
+export NAMENODE_HOST=$NAMENODE_HOST
 ZK_HOST=$AMBARI_HOST
 export ZK_HOST=$ZK_HOST
 KAFKA_BROKER=$(getKafkaBroker)
 export KAFKA_BROKER=$KAFKA_BROKER
-ATLAS_HOST=$(getAtlasHost)
-export ATLAS_HOST=$ATLAS_HOST
+METASTORE_HOST=$(getMetaStoreHost)
+export METASTORE_HOST=$METASTORE_HOST
+COMETD_HOST=$AMBARI_HOST
+export COMETD_HOST=$COMETD_HOST
+env
 
 echo "HOSTNAME of the Data Plane ATLAS SERVER: "
 read DATAPLANE_ATLAS_HOST
@@ -116,6 +133,10 @@ echo "*********************************Setting Sqoop Atlas Client Configuration.
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.rest.address" "$DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.zookeeper.connect" "$DATAPLANE_ZK_HOST:$DATAPLANE_ZK_PORT"
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.bootstrap.servers" "$DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"
+
+echo "*********************************Setting Hive Meta Store Configuration..."
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "javax.jdo.option.ConnectionURL" "jdbc:mysql://$DATAPLANE_METASTORE_HOST/hive?createDatabaseIfNotExist=true"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "javax.jdo.option.ConnectionPassword" "hive"
 
 echo "*********************************Restarting Services to refresh configurations..."
 stopService HIVE
