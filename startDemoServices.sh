@@ -279,7 +279,7 @@ if [[ "$AMBARI_INFRA_PRESENT" == 1 ]]; then
 	fi
 else
 	echo "*********************************AMBARI_INFRA is not present, skipping..."
-if
+fi
 
 sleep 1
 # Start Atlas
