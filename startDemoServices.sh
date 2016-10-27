@@ -3,6 +3,24 @@
 export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 
+serviceExists () {
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"status" : ' | grep -Po '([0-9]+)')
+
+       	if [ "$SERVICE_STATUS" == 404 ]; then
+       		echo 0
+       	else
+       		echo 1
+       	fi
+}
+
+getServiceStatus () {
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+
+       	echo $SERVICE_STATUS
+}
+
 waitForAmbari () {
        	# Wait for Ambari
        	LOOPESCAPE="false"
@@ -243,20 +261,25 @@ else
 fi
 
 sleep 1
-# Start AMBARI_INFRA
-AMBARI_INFRA_STATUS=$(getServiceStatus AMBARI_INFRA)
-echo "*********************************Checking AMBARI_INFRA status..."
-if ! [[ $AMBARI_INFRA_STATUS == STARTED || $AMBARI_INFRA_STATUS == INSTALLED ]]; then
-       	echo "*********************************AMBARI_INFRA is in a transitional state, waiting..."
-       	waitForService AMBARI_INFRA
-       	echo "*********************************AMBARI_INFRA has entered a ready state..."
-fi
+AMBARI_INFRA_STATUS=$(serviceExists AMBARI_INFRA)
+	if [[ "$NIFI_SERVICE_PRESENT" == 1 ]]; then
+		# Start AMBARI_INFRA
+		AMBARI_INFRA_STATUS=$(getServiceStatus AMBARI_INFRA)
+		echo "*********************************Checking AMBARI_INFRA status..."
+		if ! [[ $AMBARI_INFRA_STATUS == STARTED || $AMBARI_INFRA_STATUS == INSTALLED ]]; then
+       		echo "*********************************AMBARI_INFRA is in a transitional state, waiting..."
+       		waitForService AMBARI_INFRA
+       		echo "*********************************AMBARI_INFRA has entered a ready state..."
+		fi
 
-if [[ $AMBARI_INFRA_STATUS == INSTALLED ]]; then
-       	startService AMBARI_INFRA
+		if [[ $AMBARI_INFRA_STATUS == INSTALLED ]]; then
+       		startService AMBARI_INFRA
+		else
+       		echo "*********************************AMBARI_INFRA Service Started..."
+	fi
 else
-       	echo "*********************************AMBARI_INFRA Service Started..."
-fi
+	echo "*********************************AMBARI_INFRA is not present, skipping..."
+if
 
 sleep 1
 # Start Atlas
@@ -307,6 +330,7 @@ service docker start
 docker run -d --net=host vvaks/cometd
 docker run -d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST --net=host vvaks/transactionmonitorui
 
-echo "*********************************Wait 30 seconds for Application to Initialize..."
-sleep 30
+echo "*********************************Wait 20 seconds for Application to Initialize..."
+sleep 20
 echo "*********************************Access the UI at http://$AMBARI_HOST:8090/TransactionMonitorUI/CustomerOverview"
+exit 0

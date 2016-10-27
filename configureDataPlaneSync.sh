@@ -67,6 +67,26 @@ startService (){
        	fi
 }
 
+getKafkaBroker () {
+       	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $KAFKA_BROKER
+}
+
+getAtlasHost () {
+       	ATLAS_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/ATLAS/components/ATLAS_SERVER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $ATLAS_HOST
+}
+
+#Need to recreate the Environment Variables since shell may have chnaged and BashRC script may not have loaded
+ZK_HOST=$AMBARI_HOST
+export ZK_HOST=$ZK_HOST
+KAFKA_BROKER=$(getKafkaBroker)
+export KAFKA_BROKER=$KAFKA_BROKER
+ATLAS_HOST=$(getAtlasHost)
+export ATLAS_HOST=$ATLAS_HOST
+
 echo "HOSTNAME of the Data Plane ATLAS SERVER: "
 read DATAPLANE_ATLAS_HOST
 echo "Listening PORT of the Data Plane ATLAS SERVER: "
