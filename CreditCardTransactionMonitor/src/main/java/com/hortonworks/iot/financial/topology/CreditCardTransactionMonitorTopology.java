@@ -2,8 +2,11 @@ package com.hortonworks.iot.financial.topology;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.storm.hbase.bolt.HBaseBolt;
+import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
 import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
@@ -59,7 +62,7 @@ import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
-
+import backtype.storm.tuple.Fields;
 import storm.kafka.BrokerHosts;
 import storm.kafka.KafkaSpout;
 import storm.kafka.KeyValueSchemeAsMultiScheme;
@@ -116,24 +119,37 @@ public class CreditCardTransactionMonitorTopology {
 	      customerTransactionValidationKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
 	      KafkaSpout customerTransactionValidationKafkaSpout = new KafkaSpout(customerTransactionValidationKafkaSpoutConfig);
 	      
-	     /*SimpleHBaseMapper accountMapper = new SimpleHBaseMapper()
-	              .withRowKeyField("AccountNumber")
-	              .withColumnFields(new Fields("FirstName","LastName","Latitude","Longitude"))
-	              .withColumnFamily("cf"); 
-	      
 	      Map<String, Object> hbConf = new HashMap<String, Object>();
-	      //hbConf.put("hbase.rootdir", Constants.nameNode + "/apps/hbase/data/");
-	      hbConf.put("hbase.zookeeper.quorum", Constants.zkHost);
-		  hbConf.put("hbase.zookeeper.property.clientPort", Constants.zkPort);
-	      hbConf.put("zookeeper.znode.parent", "/hbase-unsecure");
-	      conf.put("hbase.conf", hbConf);*/
+	      hbConf.put("hbase.rootdir", constants.getNameNode() + "/apps/hbase/data/");
+	      hbConf.put("hbase.zookeeper.quorum", constants.getZkHost());
+		  hbConf.put("hbase.zookeeper.property.clientPort", constants.getZkPort());
+	      hbConf.put("zookeeper.znode.parent", constants.getZkHBasePath());
+	      conf.put("hbase.conf", hbConf);
+	      
+	      SimpleHBaseMapper transactionMapper = new SimpleHBaseMapper()
+	              .withRowKeyField("transactionId")
+	              .withColumnFields(new Fields("accountNumber",
+							 				   "accountType",
+							 				   "fraudulent",
+							 				   "merchantId",
+							 				   "merchantType",
+							 				   "amount",
+							 				   "currency",
+							 				   "isCardPresent",
+							 				   "latitude",
+							 				   "longitude",
+							 				   "transactionId",
+							 				   "transactionTimeStamp",
+							 				   "distanceFromHome",
+	            		  					   "distanceFromPrev"))
+	              .withColumnFamily("Transactions");	    
 	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
-	      //builder.setSpout("KafkaSpout", new KafkaSpout(), 1);
 	      builder.setBolt("InstantiateProvenance", new InstantiateProvenance(), 1).shuffleGrouping("IncomingTransactionsKafkaSpout");
 	      builder.setBolt("EnrichTransaction", new EnrichTransaction(), 1).shuffleGrouping("InstantiateProvenance");      
 	      //builder.setBolt("PublishTransaction", new PublishTransaction(), 1).shuffleGrouping("EnrichTransaction");
 	      builder.setBolt("DetectFraud", new FraudDetector(), 1).shuffleGrouping("EnrichTransaction");
+	      builder.setBolt("PersistTransactionToHBase", new HBaseBolt("TransactionHistory", transactionMapper).withConfigKey("hbase.conf"), 1).shuffleGrouping("DetectFraud", "NormalizedTransactionStream");
 	      builder.setBolt("PublishFraudAlert", new PublishFraudAlert(), 1).shuffleGrouping("DetectFraud", "FraudulentTransactionStream");
 	      builder.setBolt("PublishTransaction", new PublishTransaction(), 1).shuffleGrouping("DetectFraud", "LegitimateTransactionStream");
 	      builder.setBolt("AtlasLineageReporter", new AtlasLineageReporter(), 1).shuffleGrouping("DetectFraud", "ProvenanceRegistrationStream");

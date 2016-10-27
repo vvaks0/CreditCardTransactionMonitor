@@ -98,6 +98,20 @@ public class FraudDetector extends BaseRichBolt {
 			persistTransactionToHbase(transaction);
 			collector.emit("FraudulentTransactionStream", new Values(transaction));
 		}
+		collector.emit("NormalizedTransactionStream", new Values(transaction.getAccountNumber(),
+																 transaction.getAccountType(),
+																 transaction.getFraudulent(),
+																 transaction.getMerchantId(),
+																 transaction.getMerchantType(),
+																 transaction.getAmount(),
+																 transaction.getCurrency(),
+																 transaction.getIsCardPresent(),
+																 transaction.getLatitude(),
+																 transaction.getLongitude(),
+																 transaction.getTransactionId(),
+																 transaction.getTransactionTimeStamp(),
+																 transaction.getDistanceFromHome(),
+																 transaction.getDistanceFromPrev()));
 		collector.emit("ProvenanceRegistrationStream", new Values(stormProvenance));
 		collector.ack(tuple);
 	}
@@ -274,5 +288,19 @@ public class FraudDetector extends BaseRichBolt {
 		declarer.declareStream("LegitimateTransactionStream", new Fields("EnrichedTransaction"));
 		declarer.declareStream("FraudulentTransactionStream", new Fields("EnrichedTransaction"));
 		declarer.declareStream("ProvenanceRegistrationStream", new Fields("ProvenanceEvent"));
+		declarer.declareStream("NormalizedTransactionStream", new Fields("accountNumber",
+																 "accountType",
+																 "fraudulent",
+																 "merchantId",
+																 "merchantType",
+																 "amount",
+																 "currency",
+																 "isCardPresent",
+																 "latitude",
+																 "longitude",
+																 "transactionId",
+																 "transactionTimeStamp",
+																 "distanceFromHome",
+																 "distanceFromPrev"));
 	}
 }
