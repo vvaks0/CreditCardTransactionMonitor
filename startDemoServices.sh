@@ -322,6 +322,8 @@ echo "*********************************Deploying Application Container to YARN..
 service docker start
 
 # Clear Slider working directory
+#export HADOOP_USER_NAME=hdfs
+#echo "*********************************HADOOP_USER_NAME set to HDFS"
 #hadoop fs -rm -R /user/root/.slider/cluster
 # Start UI servlet on Yarn using Slider
 #slider create transactionmonitorui --template /home/docker/dockerbuild/transactionmonitorui/appConfig.json --metainfo /home/docker/dockerbuild/transactionmonitorui/metainfo.json --resources /home/docker/dockerbuild/transactionmonitorui/resources.json
