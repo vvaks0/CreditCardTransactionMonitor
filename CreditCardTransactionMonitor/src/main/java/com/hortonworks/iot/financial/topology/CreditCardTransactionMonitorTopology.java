@@ -125,6 +125,7 @@ public class CreditCardTransactionMonitorTopology {
 		  hbConf.put("hbase.zookeeper.property.clientPort", constants.getZkPort());
 	      hbConf.put("zookeeper.znode.parent", constants.getZkHBasePath());
 	      conf.put("hbase.conf", hbConf);
+	      conf.put("hbase.rootdir", constants.getNameNode() + "/apps/hbase/data/");
 	      
 	      SimpleHBaseMapper transactionMapper = new SimpleHBaseMapper()
 	              .withRowKeyField("transactionId")
