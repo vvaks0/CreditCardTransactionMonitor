@@ -194,6 +194,14 @@ installNifiService () {
        	echo "*********************************Installing NIFI Service"
        	# Install NIFI Service
        	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+       	
+       	if [ -z $TASKID ]; then
+       		until ! [ -z $TASKID ]; do
+       			TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}')
+       		 	echo "*********************************AMBARI TaskID " $TASKID
+       		done
+       	fi
+       	
        	echo "*********************************AMBARI TaskID " $TASKID
        	sleep 2
        	LOOPESCAPE="false"
@@ -308,6 +316,7 @@ getAtlasHost () {
        	echo $ATLAS_HOST
 }
 
+export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
 ZK_HOST=$AMBARI_HOST
@@ -399,6 +408,16 @@ if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	ambari-server restart
        	waitForAmbari
        	installNifiService
+       	
+       	mkdir /var/run/nifi
+		chown nifi:nifi /var/run/nifi
+		NIFI_HOME=$(ls /opt/|grep nifi)
+		if [ -z "$NIFI_HOME" ]; then
+        	NIFI_HOME=$(ls /opt/|grep HDF)
+		fi
+		export NIFI_HOME
+		cp -vf  $ROOT_PATH/NifiAtlasLineageReporter/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
+       	
        	startService NIFI
 else
        	echo "*********************************NIFI Service Already Installed"
@@ -417,19 +436,19 @@ if [[ $NIFI_STATUS == INSTALLED ]]; then
 else
        	echo "*********************************NIFI Service Started..."
 fi
+
+echo "*********************************Install GeoLite City DB for Nifi..."
+wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz -P /home/centos
+cd /home/centos
+gunzip -vf GeoLite2-City.mmdb.gz
+chmod 755 -R /home/centos
+
 waitForNifiServlet
 echo "*********************************Deploying NIFI Template..."
 deployTemplateToNifi
 
 echo "*********************************Starting NIFI Flow ..."
 startNifiFlow
-
-NIFI_HOME=$(ls /opt/|grep nifi)
-if [ -z "$NIFI_HOME" ]; then
-        NIFI_HOME=$(ls /opt/|grep HDF)
-fi
-export NIFI_HOME
-cp -vf target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
 cd $ROOT_PATH
 
 #Start Kafka
