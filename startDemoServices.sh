@@ -21,13 +21,6 @@ getServiceStatus () {
        	echo $SERVICE_STATUS
 }
 
-getServiceStatus () {
-       	SERVICE=$1
-       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
-
-       	echo $SERVICE_STATUS
-}
-
 waitForService () {
        	# Ensure that Service is not in a transitional state
        	SERVICE=$1
