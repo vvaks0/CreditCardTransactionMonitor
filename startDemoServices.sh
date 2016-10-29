@@ -152,7 +152,7 @@ if ! [[ $HDFS_STATUS == STARTED || $HDFS_STATUS == INSTALLED ]]; then
 fi
 
 if [[ $HDFS_STATUS == INSTALLED ]]; then
-       	startService HDFS
+       	#startService HDFS
 else
        	echo "*********************************HDFS Service Started..."
 fi
