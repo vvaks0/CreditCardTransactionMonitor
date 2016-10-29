@@ -128,11 +128,14 @@ startService (){
 
 getLatestNifiBits () {
        	if [ "$INTVERSION" -gt 24 ]; then
-       	echo "*********************************Removing Current Version of NIFI..."
-       	rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
+       		echo "*********************************Removing Current Version of NIFI..."
+       		rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
 
-       	echo "*********************************Downloading Newest Version of NIFI..."
-       	git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
+       		echo "*********************************Downloading Newest Version of NIFI..."
+       		git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
+       		
+       		echo "*********************************Restarting Ambari..."
+			ambari-server restart
        	fi
 }
 
@@ -438,22 +441,34 @@ NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
        	getLatestNifiBits
-       	ambari-server restart
        	waitForAmbari
        	installNifiService
        	
        	mkdir /var/run/nifi
 		chown nifi:nifi /var/run/nifi
+		
+		echo "*********************************Install Nifi Atlas Reporter..."
+		NIFI_HOME=$(ls /opt/|grep nifi)
+		if [ -z "$NIFI_HOME" ]; then
+        	NIFI_HOME=$(ls /opt/|grep HDF)
+		fi
+		export NIFI_HOME
+
+		cp -vf  $ROOT_PATH/NifiAtlasLineageReporter/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
+       	
+       	startService NIFI
+else
+       	echo "*********************************NIFI Service Already Installed"
+		echo "*********************************Install Nifi Atlas Reporter..."
+		stopService NIFI
 		NIFI_HOME=$(ls /opt/|grep nifi)
 		if [ -z "$NIFI_HOME" ]; then
         	NIFI_HOME=$(ls /opt/|grep HDF)
 		fi
 		export NIFI_HOME
 		cp -vf  $ROOT_PATH/NifiAtlasLineageReporter/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
-       	
-       	startService NIFI
-else
-       	echo "*********************************NIFI Service Already Installed"
+		sleep 2
+		startService NIFI
 fi
 
 NIFI_STATUS=$(getServiceStatus NIFI)
