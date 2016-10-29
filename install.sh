@@ -174,6 +174,10 @@ installNifiService () {
        	echo "*********************************Creating NIFI configuration..."
 
        	# Create and apply configuration
+       	#sleep 2
+		if [ "$INTVERSION" -eq 24 ]; then
+			/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
+		fi
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-ambari-config $ROOT_PATH/Nifi/config/nifi-ambari-config.json
        	sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-bootstrap-env $ROOT_PATH/Nifi/config/nifi-bootstrap-env.json
@@ -183,8 +187,6 @@ installNifiService () {
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-flow-env $ROOT_PATH/Nifi/config/nifi-flow-env.json
        	sleep 2
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-properties-env $ROOT_PATH/Nifi/config/nifi-properties-env.json
-       	#sleep 2
-		#/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
        	sleep 2
        	echo "*********************************Adding NIFI MASTER role to Host..."
        	# Add NIFI Master role to Sandbox host
@@ -242,7 +244,7 @@ deployTemplateToNifi () {
        	curl -u admin:admin -i -H "Content-Type:application/json" -d "{\"templateId\":\"$TEMPLATEID\",\"originX\":100,\"originY\":100}" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/template-instance
 	else
        	 # Import NIFI Template HDF 1.x
-       	TEMPLATEID=$(curl -v -F template=@"Nifi/template/BiologicsManufacturingFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+       	TEMPLATEID=$(curl -v -F template=@"$ROOT_PATH/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
 		
 		# Instantiate NIFI Template HDF 1.x
 		echo "*********************************Instantiating NIFI Flow..."
