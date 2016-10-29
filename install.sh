@@ -175,7 +175,7 @@ installNifiService () {
 
        	# Create and apply configuration
        	#sleep 2
-		if [ "$INTVERSION" -eq 24 ]; then
+		if [ "$INTVERSION" -lt 25 ]; then
 			/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
 		fi
        	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-ambari-config $ROOT_PATH/Nifi/config/nifi-ambari-config.json
