@@ -18,6 +18,7 @@
 #export JAVA_HOME=/usr/jdk1.8.0_101
 #echo "export JAVA_HOME=/usr/jdk1.8.0_101" >> /etc/bashrc
 
+#yum-config-manager --disable epel
 if [ ! -d "/usr/jdk64" ]; then
 	echo "*********************************Install and Enable Oracle JDK 8"
 	wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u101-b13/jdk-8u101-linux-x64.tar.gz"
@@ -28,6 +29,11 @@ if [ ! -d "/usr/jdk64" ]; then
 	alternatives --install /usr/bin/jar jar /usr/jdk64/bin/jar 3
 	export JAVA_HOME=/usr/jdk64
 	echo "export JAVA_HOME=/usr/jdk64" >> /etc/bashrc
+fi
+
+if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
+echo "*********************************Only Atlas Server installed, setting symbolic link"
+	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
 fi
 
 export AMBARI_HOST=$(hostname -f)
@@ -383,8 +389,8 @@ echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
 echo "export COMETD_HOST=$COMETD_HOST" >> /etc/bashrc
 
 # Install Git
-echo "*********************************Installing Git..."
-yum install -y git
+#echo "*********************************Installing Git..."
+#yum install -y git
 
 # Install Maven
 echo "*********************************Installing Maven..."
@@ -584,5 +590,6 @@ echo "*********************************Setting Ambari-Server to Start on Boot...
 chkconfig --add ambari-server
 chkconfig ambari-server on
 echo "*********************************Installation Complete... "
+#yum-config-manager --enable epel
 # Reboot to refresh configuration
 #reboot now
