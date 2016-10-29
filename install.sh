@@ -34,6 +34,7 @@ fi
 if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
 echo "*********************************Only Atlas Server installed, setting symbolic link"
 	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
+	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
 fi
 
 export AMBARI_HOST=$(hostname -f)
