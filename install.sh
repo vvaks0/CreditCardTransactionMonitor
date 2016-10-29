@@ -83,7 +83,7 @@ stopService () {
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
        	echo "*********************************Stopping Service $SERVICE ..."
        	if [ "$SERVICE_STATUS" == STARTED ]; then
-        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop $SERVICE"}, "ServiceInfo": {"state": "INSTALLED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
+        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Stop $SERVICE"}, "ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
         echo "*********************************Stop $SERVICE TaskID $TASKID"
         sleep 2
@@ -107,7 +107,7 @@ startService (){
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
        		echo "*********************************Starting Service $SERVICE ..."
        	if [ "$SERVICE_STATUS" == INSTALLED ]; then
-        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE"}, "ServiceInfo": {"state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
+        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE" }, "ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
 
         echo "*********************************Start $SERVICE TaskID $TASKID"
         sleep 2
