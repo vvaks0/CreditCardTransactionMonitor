@@ -21,6 +21,56 @@ getServiceStatus () {
        	echo $SERVICE_STATUS
 }
 
+getServiceStatus () {
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+
+       	echo $SERVICE_STATUS
+}
+
+waitForService () {
+       	# Ensure that Service is not in a transitional state
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+       	sleep 2
+       	echo "$SERVICE STATUS: $SERVICE_STATUS"
+       	LOOPESCAPE="false"
+       	if ! [[ "$SERVICE_STATUS" == STARTED || "$SERVICE_STATUS" == INSTALLED ]]; then
+        until [ "$LOOPESCAPE" == true ]; do
+                SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+            if [[ "$SERVICE_STATUS" == STARTED || "$SERVICE_STATUS" == INSTALLED ]]; then
+                LOOPESCAPE="true"
+            fi
+            echo "*********************************$SERVICE Status: $SERVICE_STATUS"
+            sleep 2
+        done
+       	fi
+}
+
+startService (){
+       	SERVICE=$1
+       	SERVICE_STATUS=$(getServiceStatus $SERVICE)
+       		echo "*********************************Starting Service $SERVICE ..."
+       	if [ "$SERVICE_STATUS" == INSTALLED ]; then
+        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE" }, "ServiceInfo": {"maintenance_state" : "OFF", "state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
+
+        echo "*********************************Start $SERVICE TaskID $TASKID"
+        sleep 2
+        LOOPESCAPE="false"
+        until [ "$LOOPESCAPE" == true ]; do
+            TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+            if [ "$TASKSTATUS" == COMPLETED ]; then
+                LOOPESCAPE="true"
+            fi
+            echo "*********************************Start $SERVICE Task Status $TASKSTATUS"
+            sleep 2
+        done
+        echo "*********************************$SERVICE Service Started..."
+       	elif [ "$SERVICE_STATUS" == STARTED ]; then
+       	echo "*********************************$SERVICE Service Started..."
+       	fi
+}
+
 waitForAmbari () {
        	# Wait for Ambari
        	LOOPESCAPE="false"
@@ -98,56 +148,6 @@ env
 mkdir /var/run/nifi
 chmod 777 /var/run/nifi
 chown nifi:nifi /var/run/nifi
-
-getServiceStatus () {
-       	SERVICE=$1
-       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
-
-       	echo $SERVICE_STATUS
-}
-
-waitForService () {
-       	# Ensure that Service is not in a transitional state
-       	SERVICE=$1
-       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
-       	sleep 2
-       	echo "$SERVICE STATUS: $SERVICE_STATUS"
-       	LOOPESCAPE="false"
-       	if ! [[ "$SERVICE_STATUS" == STARTED || "$SERVICE_STATUS" == INSTALLED ]]; then
-        until [ "$LOOPESCAPE" == true ]; do
-                SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
-            if [[ "$SERVICE_STATUS" == STARTED || "$SERVICE_STATUS" == INSTALLED ]]; then
-                LOOPESCAPE="true"
-            fi
-            echo "*********************************$SERVICE Status: $SERVICE_STATUS"
-            sleep 2
-        done
-       	fi
-}
-
-startService (){
-       	SERVICE=$1
-       	SERVICE_STATUS=$(getServiceStatus $SERVICE)
-       		echo "*********************************Starting Service $SERVICE ..."
-       	if [ "$SERVICE_STATUS" == INSTALLED ]; then
-        TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context": "Start $SERVICE"}, "ServiceInfo": {"state": "STARTED"}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep "id" | grep -Po '([0-9]+)')
-
-        echo "*********************************Start $SERVICE TaskID $TASKID"
-        sleep 2
-        LOOPESCAPE="false"
-        until [ "$LOOPESCAPE" == true ]; do
-            TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-            if [ "$TASKSTATUS" == COMPLETED ]; then
-                LOOPESCAPE="true"
-            fi
-            echo "*********************************Start $SERVICE Task Status $TASKSTATUS"
-            sleep 2
-        done
-        echo "*********************************$SERVICE Service Started..."
-       	elif [ "$SERVICE_TATUS" == STARTED ]; then
-       	echo "*********************************$SERVICE Service Started..."
-       	fi
-}
 
 #Start HDFS
 HDFS_STATUS=$(getServiceStatus HDFS)
