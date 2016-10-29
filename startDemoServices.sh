@@ -143,19 +143,19 @@ chmod 777 /var/run/nifi
 chown nifi:nifi /var/run/nifi
 
 #Start HDFS
-HDFS_STATUS=$(getServiceStatus HDFS)
-echo "*********************************Checking HDFS status..."
-if ! [[ $HDFS_STATUS == STARTED || $HDFS_STATUS == INSTALLED ]]; then
-       	echo "*********************************HDFS is in a transitional state, waiting..."
-       	waitForService HDFS
-       	echo "*********************************HDFS has entered a ready state..."
-fi
+#HDFS_STATUS=$(getServiceStatus HDFS)
+#echo "*********************************Checking HDFS status..."
+#if ! [[ $HDFS_STATUS == STARTED || $HDFS_STATUS == INSTALLED ]]; then
+#       	echo "*********************************HDFS is in a transitional state, #waiting..."
+#       	waitForService HDFS
+#       	echo "*********************************HDFS has entered a ready state..."
+#fi
 
-if [[ $HDFS_STATUS == INSTALLED ]]; then
-       	#startService HDFS
-else
-       	echo "*********************************HDFS Service Started..."
-fi
+#if [[ $HDFS_STATUS == INSTALLED ]]; then
+#       	startService HDFS
+#else
+#       	echo "*********************************HDFS Service Started..."
+#fi
 
 sleep 1
 #Start YARN
