@@ -127,7 +127,7 @@ startService (){
 }
 
 getLatestNifiBits () {
-       	if [ "$INTVERSION" -gt 22 ]; then
+       	if [ "$INTVERSION" -gt 24 ]; then
        	echo "*********************************Removing Current Version of NIFI..."
        	rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
 
@@ -230,24 +230,38 @@ waitForNifiServlet () {
        	done
 }
 
-# Import NIFI Template
-deployTemplateToNifi () {
-       	echo "*********************************Importing NIFI Template..."
-       	TEMPLATEID=$(curl -v -F template=@"$ROOT_PATH/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/templates/upload | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
-       	sleep 2
 
-       	echo "*********************************Instantiating NIFI Flow..."
-       	# Instantiate NIFI Template
+deployTemplateToNifi () {
+	echo "*********************************Importing NIFI Template..."		
+	if [ "$INTVERSION" -gt 24 ]; then
+       	# Import NIFI Template HDF 2.x
+       	TEMPLATEID=$(curl -v -F template=@"$ROOT_PATH/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/templates/upload | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+		
+		# Instantiate NIFI Template 2.x
+		echo "*********************************Instantiating NIFI Flow..."
        	curl -u admin:admin -i -H "Content-Type:application/json" -d "{\"templateId\":\"$TEMPLATEID\",\"originX\":100,\"originY\":100}" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/template-instance
+	else
+       	 # Import NIFI Template HDF 1.x
+       	TEMPLATEID=$(curl -v -F template=@"Nifi/template/BiologicsManufacturingFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
+		
+		# Instantiate NIFI Template HDF 1.x
+		echo "*********************************Instantiating NIFI Flow..."
+		REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
+curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "templateId=$TEMPLATEID&originX=100&originY=100&version=$REVISION" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/process-groups/root/template-instance
+	fi
+
+	sleep 2
 }
 
 # Start NIFI Flow
 startNifiFlow () {
-       	echo "*********************************Starting NIFI Flow..."
+    echo "*********************************Starting NIFI Flow..."
+	if [ "$INTVERSION" -gt 24 ]; then       
        	TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
        	length=${#TARGETS[@]}
-       		echo $length
-       		echo ${TARGETS[0]}
+       	echo $length
+       	echo ${TARGETS[0]}
+       	
        	for ((i = 0; i < $length; i++))
        			do
        			ID=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '"id":"([a-zA-z0-9\-]+)'|grep -Po ':"([a-zA-z0-9\-]+)'|grep -Po '([a-zA-z0-9\-]+)'|head -1)
@@ -270,6 +284,21 @@ startNifiFlow () {
        		fi
        		curl -u admin:admin -i -H "Content-Type:application/json" -d "${PAYLOAD}" -X PUT ${TARGETS[i]}
        	done
+	else       	
+       	# Start NIFI Flow
+		echo "*********************************Starting NIFI Flow..."
+		REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
+
+		TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
+length=${#TARGETS[@]}
+
+		for ((i = 0; i != length; i++)); do
+   			echo curl -u admin:admin -i -X GET ${TARGETS[i]}
+   			echo "Current Revision: " $REVISION
+   			curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "state=RUNNING&version=$REVISION" -X PUT ${TARGETS[i]}
+		   REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
+		done
+	fi
 }
 
 enablePhoenix () {
@@ -404,10 +433,8 @@ mvn clean install
 NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
-       	if [ "$INTVERSION" -lt 24 ]; then
-       		getLatestNifiBits
-       		ambari-server restart
-       	fi
+       	getLatestNifiBits
+       	ambari-server restart
        	waitForAmbari
        	installNifiService
        	
