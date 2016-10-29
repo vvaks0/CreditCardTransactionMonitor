@@ -404,8 +404,10 @@ mvn clean install
 NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
-       	getLatestNifiBits
-       	ambari-server restart
+       	if [ "$INTVERSION" -lt 24 ]; then
+       		getLatestNifiBits
+       		ambari-server restart
+       	fi
        	waitForAmbari
        	installNifiService
        	
