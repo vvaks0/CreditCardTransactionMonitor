@@ -484,6 +484,7 @@ echo "*********************************Starting NIFI Flow ..."
 startNifiFlow
 cd $ROOT_PATH
 
+sleep 2
 #Start Kafka
 KAFKA_STATUS=$(getServiceStatus KAFKA)
 echo "*********************************Checking KAFKA status..."
