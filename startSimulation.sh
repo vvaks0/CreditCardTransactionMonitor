@@ -23,7 +23,7 @@ NIFI_HOST_IP=$(getent hosts $NIFI_HOST | awk '{ print $1 }')
 echo "*********************************NIFI HOST: $NIFI_HOST"
 echo "*********************************NIFI HOST IP: $NIFI_HOST_IP"
 
-echo "*********************************Starting RetailStore Simulation..."
+echo "*********************************Starting Credit Card Transaction Simulation..."
 nohup java -jar CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar Customer 1000 Simulation $NIFI_HOST_IP > CreditCardTransactionSim.log 2>&1&
 echo $! > CreditCardTransactionSim.pid
 
