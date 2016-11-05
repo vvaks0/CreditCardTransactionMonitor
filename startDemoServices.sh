@@ -88,6 +88,21 @@ waitForAmbari () {
        	done
 }
 
+startNifiFlowReporter() {
+	sleep 1
+	echo "*********************************Instantiating Nifi Reporting Task..."
+	PAYLOAD=$(echo "{\"revision\":{\"version\":0},\"component\":{\"name\":\"AtlasFlowReportingTask\",\"type\":\"org.apache.nifi.atlas.reporting.AtlasFlowReportingTask\",\"properties\":{\"Atlas URL\":\"http://$ATLAS_HOST:21000\",\"Nifi URL\":\"http://$AMBARI_HOST:9090\"}}}")
+
+	REPORTING_TASK_ID=$(curl -d "$PAYLOAD" -H "Content-Type: application/json" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/reporting-tasks|grep -Po '("component":{"id":")([0-9a-zA-z\-]+)'| grep -Po '(:"[0-9a-zA-z\-]+)'| grep -Po '([0-9a-zA-z\-]+)')
+	
+	sleep 1
+	echo "*********************************Starting Nifi Reporting Task..."
+PAYLOAD=$(echo "{\"id\":\"$REPORTING_TASK_ID\",\"revision\":{\"version\":1},\"component\":{\"id\":\"$REPORTING_TASK_ID\",\"state\":\"RUNNING\"}}")
+
+	curl -d "$PAYLOAD" -H "Content-Type: application/json" -X PUT http://$AMBARI_HOST:9090/nifi-api/reporting-tasks/$REPORTING_TASK_ID
+	sleep 1
+}
+
 getNameNodeHost () {
        	NAMENODE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HDFS/components/NAMENODE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
@@ -325,6 +340,10 @@ fi
 # Deploy Storm Topology
 echo "*********************************Deploying Storm Topology..."
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
+
+# Start Nifi Flow Reporter to send flow meta data to Atlas
+sleep 5
+startNifiFlowReporter
 
 echo "*********************************Deploying Application Container to..."
 # Ensure docker service is running
