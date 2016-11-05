@@ -98,7 +98,7 @@ public class FraudDetector extends BaseRichBolt {
 			persistTransactionToHbase(transaction);
 			collector.emit("FraudulentTransactionStream", new Values(transaction));
 		}
-		/*collector.emit("NormalizedTransactionStream", new Values(transaction.getAccountNumber(),
+		collector.emit("HiveTransactionStream", new Values(transaction.getAccountNumber(),
 																 transaction.getAccountType(),
 																 transaction.getFraudulent(),
 																 transaction.getMerchantId(),
@@ -111,7 +111,7 @@ public class FraudDetector extends BaseRichBolt {
 																 transaction.getTransactionId(),
 																 transaction.getTransactionTimeStamp(),
 																 transaction.getDistanceFromHome(),
-																 transaction.getDistanceFromPrev())); */
+																 transaction.getDistanceFromPrev()));
 		collector.emit("ProvenanceRegistrationStream", new Values(stormProvenance));
 		collector.ack(tuple);
 	}
@@ -302,5 +302,20 @@ public class FraudDetector extends BaseRichBolt {
 																 "transactionTimeStamp",
 																 "distanceFromHome",
 																 "distanceFromPrev"));
+		
+		declarer.declareStream("HiveTransactionStream", new Fields("accountNumber",
+				 "accountType",
+				 "fraudulent",
+				 "merchantId",
+				 "merchantType",
+				 "amount",
+				 "currency",
+				 "isCardPresent",
+				 "latitude",
+				 "longitude",
+				 "transactionId",
+				 "transactionTimeStamp",
+				 "distanceFromHome",
+				 "distanceFromPrev"));
 	}
 }

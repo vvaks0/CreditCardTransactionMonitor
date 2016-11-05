@@ -26,6 +26,9 @@ public class Constants {
 	private String atlasHost = "localhost";
 	private String atlasPort = "21000";
 	
+	private String hiveMetaStoreURI = "jdbc:mysql://sandbox.hortonworks.com/hive";
+	private String hiveDbName = "default";
+	
 	public Constants(){
 		Map<String, String> env = System.getenv();
         //System.out.println("********************** ENV: " + env);
@@ -49,6 +52,9 @@ public class Constants {
         }
         if(env.get("HIVE_PATH") != null){
         	this.hivePath = (String)env.get("HIVE_PATH");
+        }
+        if(env.get("HIVE_METASTORE_URI") != null){
+        	this.hiveMetaStoreURI = (String)env.get("HIVE_METASTORE_URI");
         }
         if(env.get("ATLAS_HOST") != null){
         	this.setAtlasHost((String)env.get("ATLAS_HOST"));
@@ -186,5 +192,21 @@ public class Constants {
 
 	public void setAtlasPort(String atlasPort) {
 		this.atlasPort = atlasPort;
+	}
+
+	public String getHiveMetaStoreURI() {
+		return hiveMetaStoreURI;
+	}
+
+	public void setHiveMetaStoreURI(String hiveMetaStoreURI) {
+		this.hiveMetaStoreURI = hiveMetaStoreURI;
+	}
+
+	public String getHiveDbName() {
+		return hiveDbName;
+	}
+
+	public void setHiveDbName(String hiveDbName) {
+		this.hiveDbName = hiveDbName;
 	}
 }
