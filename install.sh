@@ -368,10 +368,40 @@ configureYarnMemory () {
 	fi	
 }
 
+createTransactionHistoryTable () {
+	HIVESERVER_HOST=$(getHiveServerHost)
+	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
+                                                    fraudulent String,
+                                                    merchantId String,
+                                                    merchantType String,
+                                                    amount Int,
+                                                    currency String,
+                                                    isCardPresent String,
+                                                    latitude Double,
+                                                    longitude Double,
+                                                    transactionId String,
+                                                    transactionTimeStamp String,
+                                                    distanceFromHome Double,                                                                          
+                                                    distanceFromPrev Double)
+	COMMENT 'Customer Credit Card Transaction History'
+	PARTITIONED BY (accountType String)
+	CLUSTERED BY (merchantType) INTO 30 BUCKETS
+	STORED AS ORC;"
+	echo "*********************************Creating TransactionHistory Table..."
+	# CREATE Customer Transaction History Table
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+}
+
 getNameNodeHost () {
        	NAMENODE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HDFS/components/NAMENODE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
        	echo $NAMENODE_HOST
+}
+
+getHiveServerHost () {
+        HIVESERVER_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_SERVER|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+
+        echo $HIVESERVER_HOST
 }
 
 getKafkaBroker () {
