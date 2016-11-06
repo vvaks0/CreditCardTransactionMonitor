@@ -148,20 +148,20 @@ public class CreditCardTransactionMonitorTopology {
 	              .withColumnFamily("Transactions");
 	      
 	      DelimitedRecordHiveMapper processedTransactionHiveMapper = new DelimitedRecordHiveMapper()
-	    		  .withColumnFields(new Fields("accountNumber",
+	    		  .withColumnFields(new Fields("accountnumber",
 		 				   						"fraudulent",
-		 				   						"merchantId",
-		 				   						"merchantType",
+		 				   						"merchantid",
+		 				   						"merchanttype",
 		 				   						"amount",
 		 				   						"currency",
-		 				   						"isCardPresent",
+		 				   						"iscardpresent",
 		 				   						"latitude",
 		 				   						"longitude",
-		 				   						"transactionId",
-		 				   						"transactionTimeStamp",
-		 				   						"distanceFromHome",
-	  					   						"distanceFromPrev"))
-	    		  .withPartitionFields(new Fields("accountType"));
+		 				   						"transactionid",
+		 				   						"transactiontimestamp",
+		 				   						"distancefromhome",
+	  					   						"distancefromprev"))
+	    		  .withPartitionFields(new Fields("accounttype"));
 	    		 
 	      HiveOptions processedTransactionHiveOptions = new HiveOptions(constants.getHiveMetaStoreURI(),
 	    				 							constants.getHiveDbName(),

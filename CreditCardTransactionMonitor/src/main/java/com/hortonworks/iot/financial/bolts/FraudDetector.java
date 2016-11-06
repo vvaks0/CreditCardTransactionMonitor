@@ -303,19 +303,19 @@ public class FraudDetector extends BaseRichBolt {
 																 "distanceFromHome",
 																 "distanceFromPrev"));
 		
-		declarer.declareStream("HiveTransactionStream", new Fields("accountNumber",
-				 "accountType",
-				 "fraudulent",
-				 "merchantId",
-				 "merchantType",
-				 "amount",
-				 "currency",
-				 "isCardPresent",
-				 "latitude",
-				 "longitude",
-				 "transactionId",
-				 "transactionTimeStamp",
-				 "distanceFromHome",
-				 "distanceFromPrev"));
+		declarer.declareStream("HiveTransactionStream", new Fields("accountnumber",
+					"accounttype",
+					"fraudulent",
+					"merchantid",
+					"merchanttype",
+					"amount",
+					"currency",
+					"iscardpresent",
+					"latitude",
+					"longitude",
+					"transactionid",
+					"transactiontimestamp",
+					"distancefromhome",
+					"distancefromprev"));
 	}
 }
