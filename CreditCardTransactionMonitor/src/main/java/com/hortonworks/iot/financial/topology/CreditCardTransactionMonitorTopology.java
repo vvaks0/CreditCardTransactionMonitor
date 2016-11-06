@@ -17,9 +17,9 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-//import org.apache.storm.hive.bolt.HiveBolt;
-//import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
-//import org.apache.storm.hive.common.HiveOptions;
+import org.apache.storm.hive.bolt.HiveBolt;
+import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
+import org.apache.storm.hive.common.HiveOptions;
 
 /*
 import org.apache.storm.Config;
@@ -48,7 +48,6 @@ import com.hortonworks.iot.financial.bolts.AtlasLineageReporter;
 import com.hortonworks.iot.financial.bolts.EnrichTransaction;
 import com.hortonworks.iot.financial.bolts.FraudDetector;
 import com.hortonworks.iot.financial.bolts.InstantiateProvenance;
-import com.hortonworks.iot.financial.bolts.PrintTransaction;
 import com.hortonworks.iot.financial.bolts.ProcessCustomerTransactionValidation;
 import com.hortonworks.iot.financial.bolts.PublishAccountStatusUpdate;
 import com.hortonworks.iot.financial.bolts.PublishFraudAlert;
@@ -147,7 +146,7 @@ public class CreditCardTransactionMonitorTopology {
 							 				   "distanceFromHome",
 	            		  					   "distanceFromPrev"))
 	              .withColumnFamily("Transactions");
-	      /*
+	      
 	      DelimitedRecordHiveMapper processedTransactionHiveMapper = new DelimitedRecordHiveMapper()
 	    		  .withColumnFields(new Fields("accountNumber",
 		 				   						"accountType",
@@ -167,7 +166,7 @@ public class CreditCardTransactionMonitorTopology {
 	      HiveOptions processedTransactionHiveOptions = new HiveOptions(constants.getHiveMetaStoreURI(),
 	    				 							constants.getHiveDbName(),
 	    				 							"TransactionHistory",
-	    				 							processedTransactionHiveMapper); */
+	    				 							processedTransactionHiveMapper);
 	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
 	      builder.setBolt("InstantiateProvenance", new InstantiateProvenance(), 1).shuffleGrouping("IncomingTransactionsKafkaSpout");
