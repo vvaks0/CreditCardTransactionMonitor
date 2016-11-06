@@ -148,60 +148,57 @@ COMETD_HOST=$AMBARI_HOST
 export COMETD_HOST=$COMETD_HOST
 env
 
-echo "HOSTNAME of the Data Plane KAFKA BROKER: "
-read DATAPLANE_KAFKA_BROKER
-echo "Listening PORT of the Data Plane KAFKA BROKER (6667): "
-read DATAPLANE_KAFKA_PORT
-if [ -z $DATAPLANE_KAFKA_PORT ]; then
-	DATAPLANE_KAFKA_PORT=6667
-fi
+echo "HOSTNAME of the Data Plane AMBARI SERVER: "
+read DATAPLANE_AMBARI_HOST
 
-echo "HOSTNAME of a Data Plane ZOOKEEPER: "
-read DATAPLANE_ZK_HOST
-echo "Listening PORT of Data Plane ZOOKEEPER (2181): "
-read DATAPLANE_ZK_PORT
-if [ -z $DATAPLANE_ZK_PORT ]; then
-	DATAPLANE_ZK_PORT=2181
-fi
+export AMBARI_HOST=$DATAPLANE_AMBARI_HOST
 
-echo "HOSTNAME of the Data Plane ATLAS SERVER: "
-read DATAPLANE_ATLAS_HOST
-echo "Listening PORT of the Data Plane ATLAS SERVER (21000): "
-read DATAPLANE_ATLAS_PORT
-if [ -z $DATAPLANE_ATLAS_PORT ]; then
-	DATAPLANE_ATLAS_PORT=21000
-fi
+export ZK_HOST=AMBARI_HOST
+export ATLAS_HOST=getAtlasHost
+export KAFKA_BROKER=getKafkaBroker
+export HIVE_METASTORE_HOST=getHiveMetaStoreHost
+export HIVESERVER_HOST=getHiveServerHost
 
-echo "HOSTNAME of a Data Plane HIVE METASTORE: "
-read DATAPLANE_METASTORE_HOST
+export ZK_PORT=2181
+export ATLAS_PORT=21000
+export KAFKA_PORT=6667
+export HIVE_METASTORE_PORT=9083
 
-export ATLAS_HOST=$DATAPLANE_ATLAS_HOST
+export HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:$HIVE_METASTORE_PORT
+
 echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
 echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
+echo "export HIVE_METASTORE_HOST=$METASTORE_HOST" >> /etc/bashrc
+echo "export HIVE_METASTORE_HOST=$METASTORE_HOST" >> ~/.bash_profile
+echo "export HIVE_METASTORE_JDO_HOST=$HIVESERVER_HOST" >> /etc/bashrc
+echo "export HIVE_METASTORE_JDO_HOST=$HIVESERVER_HOST" >> ~/.bash_profile
+echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> ~/.bash_profile
 . ~/.bash_profile
 
-echo "*********************************DATA PLANE ATLAS ENDPOINT: $DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
-echo "*********************************DATA PLANE KAFKA ENDPOINT: $DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"
-echo "*********************************DATA PLANE ZOOKEEPER ENDPOINT: $DATAPLANE_ZK_HOST:$DATAPLANE_ZK_PORT"
+echo "********************************DATAPLANE ATLAS ENDPOINT: $ATLAS_HOST:$ATLAS_PORT"
+echo "********************************DATAPLANE KAFKA ENDPOINT: $KAFKA_BROKER:$KAFKA_PORT"
+echo "********************************DATAPLANE ZOOKEEPER ENDPOINT: $ZK_HOST:$ZK_PORT"
 
+export AMBARI_HOST=$(hostname -f)
 echo "*********************************Setting Hive Atlas Client Configuration..."
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "atlas.rest.address" "$DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-atlas-application.properties "atlas.kafka.bootstrap.servers" "$DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-atlas-application.properties "atlas.kafka.zookeeper.connect" "$DATAPLANE_ZK_HOST:$DATAPLANE_ZK_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "atlas.rest.address" "$ATLAS_HOST:$ATLAS_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-atlas-application.properties "atlas.kafka.bootstrap.servers" "$KAFKA_BROKER:$KAFKA_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-atlas-application.properties "atlas.kafka.zookeeper.connect" "$ZK_HOST:$ZK_PORT"
 
 echo "*********************************Setting Storm Atlas Client Configuration..."
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.rest.address" "$DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.kafka.zookeeper.connect" "$DATAPLANE_ZK_HOST:$DATAPLANE_ZK_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.kafka.bootstrap.servers" "$DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.rest.address" "$ATLAS_HOST:$ATLAS_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.kafka.zookeeper.connect" "$ZK_HOST:$ZK_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME storm-atlas-application.properties "atlas.kafka.bootstrap.servers" "$KAFKA_BROKER:$KAFKA_PORT"
 
 echo "*********************************Setting Sqoop Atlas Client Configuration..."
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.rest.address" "$DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.zookeeper.connect" "$DATAPLANE_ZK_HOST:$DATAPLANE_ZK_PORT"
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.bootstrap.servers" "$DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.rest.address" "$ATLAS_HOST:$ATLAS_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.zookeeper.connect" "$ZK_HOST:$ZK_PORT"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME sqoop-atlas-application.properties "atlas.kafka.bootstrap.servers" "$KAFKA_BROKER:$KAFKA_PORT"
 
 echo "*********************************Setting Hive Meta Store Configuration..."
-/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "javax.jdo.option.ConnectionURL" "jdbc:mysql://$DATAPLANE_METASTORE_HOST/hive?createDatabaseIfNotExist=true"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "javax.jdo.option.ConnectionURL" "jdbc:mysql://$HIVE_METASTORE_JDO_HOST/hive?createDatabaseIfNotExist=true"
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "javax.jdo.option.ConnectionPassword" "hive"
+/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.metastore.uris" "thrift://$HIVE_METASTORE_HOST:$HIVE_METASTORE_PORT"
 
 echo "*********************************Restarting Services to refresh configurations..."
 stopService HIVE
@@ -230,3 +227,32 @@ storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.horton
 echo "*********************************Retargeting Nifi Flow Reporting Task..."
 sleep 5
 retargetNifiFlowReporter
+
+: <<'END'
+echo "HOSTNAME of the Data Plane KAFKA BROKER: "
+read DATAPLANE_KAFKA_BROKER
+echo "Listening PORT of the Data Plane KAFKA BROKER (6667): "
+read DATAPLANE_KAFKA_PORT
+if [ -z $DATAPLANE_KAFKA_PORT ]; then
+	DATAPLANE_KAFKA_PORT=6667
+fi
+
+echo "HOSTNAME of a Data Plane ZOOKEEPER: "
+read DATAPLANE_ZK_HOST
+echo "Listening PORT of Data Plane ZOOKEEPER (2181): "
+read DATAPLANE_ZK_PORT
+if [ -z $DATAPLANE_ZK_PORT ]; then
+	DATAPLANE_ZK_PORT=2181
+fi
+
+echo "HOSTNAME of the Data Plane ATLAS SERVER: "
+read DATAPLANE_ATLAS_HOST
+echo "Listening PORT of the Data Plane ATLAS SERVER (21000): "
+read DATAPLANE_ATLAS_PORT
+if [ -z $DATAPLANE_ATLAS_PORT ]; then
+	DATAPLANE_ATLAS_PORT=21000
+fi
+
+echo "HOSTNAME of a Data Plane HIVE METASTORE: "
+read DATAPLANE_METASTORE_HOST
+END
