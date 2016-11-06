@@ -87,7 +87,7 @@ retargetNifiFlowReporter() {
 	curl -X DELETE http://$AMBARI_HOST:9090/nifi-api/reporting-tasks/$REPORTING_TASK_ID?version=$REPORTING_TASK_REVISION
 
 	echo "*********************************Instantiating Reporting Task..."
-	PAYLOAD=$(echo "{\"revision\":{\"version\":0},\"component\":{\"name\":\"AtlasFlowReportingTask\",\"type\":\"org.apache.nifi.atlas.reporting.AtlasFlowReportingTask\",\"properties\":{\"Atlas URL\":\"http://$DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT\",\"Nifi URL\":\"http://$AMBARI_HOST:9090\"}}}")
+	PAYLOAD=$(echo "{\"revision\":{\"version\":0},\"component\":{\"name\":\"AtlasFlowReportingTask\",\"type\":\"org.apache.nifi.atlas.reporting.AtlasFlowReportingTask\",\"properties\":{\"Atlas URL\":\"http://$DATAPLANE_ATLAS_HOST:ATLAS_PORT\",\"Nifi URL\":\"http://$AMBARI_HOST:9090\"}}}")
 
 	REPORTING_TASK_ID=$(curl -d "$PAYLOAD" -H "Content-Type: application/json" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/reporting-tasks|grep -Po '("component":{"id":")([0-9a-zA-z\-]+)'| grep -Po '(:"[0-9a-zA-z\-]+)'| grep -Po '([0-9a-zA-z\-]+)')
 
