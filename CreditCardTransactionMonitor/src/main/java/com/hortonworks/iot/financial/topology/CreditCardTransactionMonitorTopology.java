@@ -88,13 +88,13 @@ public class CreditCardTransactionMonitorTopology {
 	  	  // Use default, Storm-generated file names
 	  	  FileNameFormat transactionLogFileNameFormat = new DefaultFileNameFormat().withPath(constants.getHivePath());
 	  	  HdfsBolt LogTransactionHdfsBolt = new HdfsBolt()
-	  		     .withFsUrl(constants.getNameNode())
+	  		     .withFsUrl(constants.getNameNodeUrl())
 	  		     .withFileNameFormat(transactionLogFileNameFormat)
 	  		     .withRecordFormat(format)
 	  		     .withRotationPolicy(rotationPolicy)
 	  		     .withSyncPolicy(syncPolicy);
 	  	System.out.println("********************** Starting Topology.......");
-	  	System.out.println("********************** Name Node: " + constants.getNameNode());
+	  	System.out.println("********************** Name Node Url: " + constants.getNameNodeUrl());
 	  	System.out.println("********************** Zookeeper Host: " + constants.getZkHost());
         System.out.println("********************** Zookeeper Port: " + constants.getZkPort());
         System.out.println("********************** Zookeeper ConnString: " + constants.getZkConnString());
@@ -126,12 +126,12 @@ public class CreditCardTransactionMonitorTopology {
 	      KafkaSpout customerTransactionValidationKafkaSpout = new KafkaSpout(customerTransactionValidationKafkaSpoutConfig);
 	      
 	      Map<String, Object> hbConf = new HashMap<String, Object>();
-	      hbConf.put("hbase.rootdir", constants.getNameNode() + "/apps/hbase/data/");
+	      hbConf.put("hbase.rootdir", constants.getNameNodeUrl() + constants.getHbasePath());
 	      hbConf.put("hbase.zookeeper.quorum", constants.getZkHost());
 		  hbConf.put("hbase.zookeeper.property.clientPort", constants.getZkPort());
 	      hbConf.put("zookeeper.znode.parent", constants.getZkHBasePath());
 	      conf.put("hbase.conf", hbConf);
-	      conf.put("hbase.rootdir", constants.getNameNode() + "/apps/hbase/data/");
+	      conf.put("hbase.rootdir", constants.getNameNodeUrl() + constants.getHbasePath());
 	      
 	      SimpleHBaseMapper transactionMapper = new SimpleHBaseMapper()
 	              .withRowKeyField("transactionId")
