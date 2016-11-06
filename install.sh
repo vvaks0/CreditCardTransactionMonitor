@@ -387,7 +387,7 @@ createTransactionHistoryTable () {
 	PARTITIONED BY (accountType String)
 	CLUSTERED BY (merchantType) INTO 30 BUCKETS
 	STORED AS ORC;"
-	echo "*********************************Creating TransactionHistory Table..."
+	
 	# CREATE Customer Transaction History Table
 	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
 }
@@ -500,11 +500,17 @@ mkdir /home/docker/
 mkdir /home/docker/dockerbuild/
 mkdir /home/docker/dockerbuild/transactionmonitorui
 
+#Create TransactionHistory Hive Table for Storm topology
+echo "*********************************Creating TransactionHistory Hive Table..."
+createTransactionHistoryTable
+
 echo "*********************************Staging Slider Configurations..."
 cd $ROOT_PATH/SliderConfig
 cp -vf appConfig.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf metainfo.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
+
+echo "*********************************Staging Slider Configurations..."
 
 # Build from source
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
