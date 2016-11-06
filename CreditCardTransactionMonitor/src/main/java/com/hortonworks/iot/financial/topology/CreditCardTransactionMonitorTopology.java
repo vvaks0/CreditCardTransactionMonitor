@@ -149,7 +149,6 @@ public class CreditCardTransactionMonitorTopology {
 	      
 	      DelimitedRecordHiveMapper processedTransactionHiveMapper = new DelimitedRecordHiveMapper()
 	    		  .withColumnFields(new Fields("accountNumber",
-		 				   						"accountType",
 		 				   						"fraudulent",
 		 				   						"merchantId",
 		 				   						"merchantType",
@@ -161,11 +160,12 @@ public class CreditCardTransactionMonitorTopology {
 		 				   						"transactionId",
 		 				   						"transactionTimeStamp",
 		 				   						"distanceFromHome",
-	  					   						"distanceFromPrev"));
+	  					   						"distanceFromPrev"))
+	    		  .withPartitionFields(new Fields("accountType"));
 	    		 
 	      HiveOptions processedTransactionHiveOptions = new HiveOptions(constants.getHiveMetaStoreURI(),
 	    				 							constants.getHiveDbName(),
-	    				 							"TransactionHistory",
+	    				 							"transactionhistory",
 	    				 							processedTransactionHiveMapper);
 	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
