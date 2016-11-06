@@ -156,11 +156,15 @@ export AMBARI_HOST=$DATAPLANE_AMBARI_HOST
 echo "*********************************DATAPLANE AMABRI HOST IS: $AMBARI_HOST"
 export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9!$\-]+')
 
-export ZK_HOST=AMBARI_HOST
-export ATLAS_HOST=$(getAtlasHost)
-export KAFKA_BROKER=$(getKafkaBroker)
-export HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
-export HIVESERVER_HOST=$(getHiveServerHost)
+export ZK_HOST=$AMBARI_HOST
+ATLAS_HOST=$(getAtlasHost)
+export ATLAS_HOST=$ATLAS_HOST
+KAFKA_BROKER=$(getKafkaBroker)
+export KAFKA_BROKER=$KAFKA_BROKER
+HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
+export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
+HIVESERVER_HOST=$(getHiveServerHost)
+export HIVESERVER_HOST=$HIVESERVER_HOST
 
 export ZK_PORT=2181
 export ATLAS_PORT=21000
