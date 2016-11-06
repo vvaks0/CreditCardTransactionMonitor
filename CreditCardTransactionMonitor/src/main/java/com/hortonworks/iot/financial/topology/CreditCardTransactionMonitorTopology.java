@@ -99,6 +99,9 @@ public class CreditCardTransactionMonitorTopology {
         System.out.println("********************** Zookeeper ConnString: " + constants.getZkConnString());
         System.out.println("********************** Zookeeper Kafka Path: " + constants.getZkKafkaPath());
         System.out.println("********************** Zookeeper HBase Path: " + constants.getZkHBasePath());
+        System.out.println("********************** Atlas Host: " + constants.getAtlasHost());
+        System.out.println("********************** Atlas Port: " + constants.getAtlasPort());
+        System.out.println("********************** Metastore URI: " + constants.getHiveMetaStoreURI());
         System.out.println("********************** Cometd URI: " + constants.getPubSubUrl());
 	  	  
 	      Config conf = new Config(); 
