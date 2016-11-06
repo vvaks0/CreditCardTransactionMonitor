@@ -104,10 +104,16 @@ getNameNodeHost () {
        	echo $NAMENODE_HOST
 }
 
-getMetaStoreHost () {
-       	METASTORE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_METASTORE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
-       	
-       	echo $METASTORE_HOST
+getHiveServerHost () {
+        HIVESERVER_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_SERVER|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+
+        echo $HIVESERVER_HOST
+}
+
+getHiveMetaStoreHost () {
+        HIVE_METASTORE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_METASTORE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+
+        echo $HIVE_METASTORE_HOST
 }
 
 getKafkaBroker () {
@@ -122,15 +128,22 @@ getAtlasHost () {
        	echo $ATLAS_HOST
 }
 
-#Need to recreate the Environment Variables since shell may have chnaged and BashRC script may not have loaded
+#Need to recreate the Environment Variables since shell may have changed and BashRC script may not have loaded
+export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
+HIVESERVER_HOST=$(getHiveServerHost)
+export HIVESERVER_HOST=$HIVESERVER_HOST
+HIVE_METASTORE_HOST=$(getHiveMetaHost)
+export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
+HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
+export HIVE_METASTORE_URI=$HIVE_METASTORE_URI
 ZK_HOST=$AMBARI_HOST
 export ZK_HOST=$ZK_HOST
 KAFKA_BROKER=$(getKafkaBroker)
 export KAFKA_BROKER=$KAFKA_BROKER
-METASTORE_HOST=$(getMetaStoreHost)
-export METASTORE_HOST=$METASTORE_HOST
+ATLAS_HOST=$(getAtlasHost)
+export ATLAS_HOST=$ATLAS_HOST
 COMETD_HOST=$AMBARI_HOST
 export COMETD_HOST=$COMETD_HOST
 env
@@ -163,6 +176,9 @@ echo "HOSTNAME of a Data Plane HIVE METASTORE: "
 read DATAPLANE_METASTORE_HOST
 
 export ATLAS_HOST=$DATAPLANE_ATLAS_HOST
+echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
+echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
+. ~/.bash_profile
 
 echo "*********************************DATA PLANE ATLAS ENDPOINT: $DATAPLANE_ATLAS_HOST:$DATAPLANE_ATLAS_PORT"
 echo "*********************************DATA PLANE KAFKA ENDPOINT: $DATAPLANE_KAFKA_BROKER:$DATAPLANE_KAFKA_PORT"

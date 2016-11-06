@@ -404,6 +404,12 @@ getHiveServerHost () {
         echo $HIVESERVER_HOST
 }
 
+getHiveMetaStoreHost () {
+        HIVE_METASTORE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_METASTORE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+
+        echo $HIVE_METASTORE_HOST
+}
+
 getKafkaBroker () {
        	KAFKA_BROKER=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/KAFKA/components/KAFKA_BROKER |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
@@ -419,6 +425,12 @@ getAtlasHost () {
 export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
+HIVESERVER_HOST=$(getHiveServerHost)
+export HIVESERVER_HOST=$HIVESERVER_HOST
+HIVE_METASTORE_HOST=$(getHiveMetaHost)
+export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
+HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
+export HIVE_METASTORE_URI=$HIVE_METASTORE_URI
 ZK_HOST=$AMBARI_HOST
 export ZK_HOST=$ZK_HOST
 KAFKA_BROKER=$(getKafkaBroker)
@@ -433,12 +445,16 @@ echo "export NAMENODE_HOST=$NAMENODE_HOST" >> /etc/bashrc
 echo "export ZK_HOST=$ZK_HOST" >> /etc/bashrc
 echo "export KAFKA_BROKER=$KAFKA_BROKER" >> /etc/bashrc
 echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
+echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> /etc/bashrc
+echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> /etc/bashrc
 echo "export COMETD_HOST=$COMETD_HOST" >> /etc/bashrc
 
 echo "export NAMENODE_HOST=$NAMENODE_HOST" >> ~/.bash_profile
 echo "export ZK_HOST=$ZK_HOST" >> ~/.bash_profile
 echo "export KAFKA_BROKER=$KAFKA_BROKER" >> ~/.bash_profile
 echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
+echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> ~/.bash_profile
+echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> ~/.bash_profile
 echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
 
 . ~/.bash_profile
