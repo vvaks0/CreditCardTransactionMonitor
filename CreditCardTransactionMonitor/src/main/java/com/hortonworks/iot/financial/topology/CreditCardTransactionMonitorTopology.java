@@ -17,9 +17,9 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-/*import org.apache.storm.hive.bolt.HiveBolt;
+import org.apache.storm.hive.bolt.HiveBolt;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
-import org.apache.storm.hive.common.HiveOptions; */
+import org.apache.storm.hive.common.HiveOptions; 
 
 /*
 import org.apache.storm.Config;
@@ -146,7 +146,7 @@ public class CreditCardTransactionMonitorTopology {
 							 				   "distanceFromHome",
 	            		  					   "distanceFromPrev"))
 	              .withColumnFamily("Transactions");
-	      /*
+	      
 	      DelimitedRecordHiveMapper processedTransactionHiveMapper = new DelimitedRecordHiveMapper()
 	    		  .withColumnFields(new Fields("accountNumber",
 		 				   						"accountType",
@@ -167,14 +167,14 @@ public class CreditCardTransactionMonitorTopology {
 	    				 							constants.getHiveDbName(),
 	    				 							"TransactionHistory",
 	    				 							processedTransactionHiveMapper);
-	      */
+	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
 	      builder.setBolt("InstantiateProvenance", new InstantiateProvenance(), 1).shuffleGrouping("IncomingTransactionsKafkaSpout");
 	      builder.setBolt("EnrichTransaction", new EnrichTransaction(), 1).shuffleGrouping("InstantiateProvenance");      
 	      //builder.setBolt("PublishTransaction", new PublishTransaction(), 1).shuffleGrouping("EnrichTransaction");
 	      builder.setBolt("DetectFraud", new FraudDetector(), 1).shuffleGrouping("EnrichTransaction");
 	      builder.setBolt("PersistTransactionToHBase", new HBaseBolt("TransactionHistory", transactionMapper).withConfigKey("hbase.conf"), 1).shuffleGrouping("DetectFraud", "NormalizedTransactionStream");
-	      //builder.setBolt("ProcessedTransactionPersistToHive", new HiveBolt(processedTransactionHiveOptions),1).shuffleGrouping("DetectFraud", "HiveTransactionStream");
+	      builder.setBolt("ProcessedTransactionPersistToHive", new HiveBolt(processedTransactionHiveOptions),1).shuffleGrouping("DetectFraud", "HiveTransactionStream");
 	      builder.setBolt("PublishFraudAlert", new PublishFraudAlert(), 1).shuffleGrouping("DetectFraud", "FraudulentTransactionStream");
 	      builder.setBolt("PublishTransaction", new PublishTransaction(), 1).shuffleGrouping("DetectFraud", "LegitimateTransactionStream");
 	      builder.setBolt("AtlasLineageReporter", new AtlasLineageReporter(), 1).shuffleGrouping("DetectFraud", "ProvenanceRegistrationStream");
