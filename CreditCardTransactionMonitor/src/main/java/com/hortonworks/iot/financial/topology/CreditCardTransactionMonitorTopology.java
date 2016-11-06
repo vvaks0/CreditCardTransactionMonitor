@@ -166,7 +166,7 @@ public class CreditCardTransactionMonitorTopology {
 	    		 
 	      HiveOptions processedTransactionHiveOptions = new HiveOptions(constants.getHiveMetaStoreURI(),
 	    				 							constants.getHiveDbName(),
-	    				 							"TransactionsHistory",
+	    				 							"TransactionHistory",
 	    				 							processedTransactionHiveMapper);
 	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
