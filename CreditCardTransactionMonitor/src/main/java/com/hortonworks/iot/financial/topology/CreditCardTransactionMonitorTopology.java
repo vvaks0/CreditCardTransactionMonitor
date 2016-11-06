@@ -94,6 +94,7 @@ public class CreditCardTransactionMonitorTopology {
 	  		     .withRotationPolicy(rotationPolicy)
 	  		     .withSyncPolicy(syncPolicy);
 	  	System.out.println("********************** Starting Topology.......");
+	  	System.out.println("********************** Name Node: " + constants.getNameNode());
 	  	System.out.println("********************** Zookeeper Host: " + constants.getZkHost());
         System.out.println("********************** Zookeeper Port: " + constants.getZkPort());
         System.out.println("********************** Zookeeper ConnString: " + constants.getZkConnString());
