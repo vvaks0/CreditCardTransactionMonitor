@@ -153,6 +153,9 @@ read DATAPLANE_AMBARI_HOST
 
 export AMBARI_HOST=$DATAPLANE_AMBARI_HOST
 
+echo "*********************************DATAPLANE AMABRI HOST IS: $AMBARI_HOST"
+export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9!$\-]+')
+
 export ZK_HOST=AMBARI_HOST
 export ATLAS_HOST=getAtlasHost
 export KAFKA_BROKER=getKafkaBroker
@@ -180,6 +183,9 @@ echo "********************************DATAPLANE KAFKA ENDPOINT: $KAFKA_BROKER:$K
 echo "********************************DATAPLANE ZOOKEEPER ENDPOINT: $ZK_HOST:$ZK_PORT"
 
 export AMBARI_HOST=$(hostname -f)
+echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
+export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9!$\-]+')
+
 echo "*********************************Setting Hive Atlas Client Configuration..."
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "atlas.rest.address" "$ATLAS_HOST:$ATLAS_PORT"
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-atlas-application.properties "atlas.kafka.bootstrap.servers" "$KAFKA_BROKER:$KAFKA_PORT"
