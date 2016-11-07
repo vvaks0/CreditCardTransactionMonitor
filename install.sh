@@ -459,10 +459,6 @@ echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
 
 . ~/.bash_profile
 
-# Install Git
-#echo "*********************************Installing Git..."
-#yum install -y git
-
 # Install Maven
 echo "*********************************Installing Maven..."
 wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo

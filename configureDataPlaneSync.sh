@@ -67,6 +67,34 @@ startService (){
        	fi
 }
 
+recreateTransactionHistoryTable () {
+	HIVESERVER_HOST=$(getHiveServerHost)
+	HQL="DROP TABLE TransactionHistory;"
+	# CREATE Customer Transaction History Table
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+	
+	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
+                                                    fraudulent String,
+                                                    merchantId String,
+                                                    merchantType String,
+                                                    amount Int,
+                                                    currency String,
+                                                    isCardPresent String,
+                                                    latitude Double,
+                                                    longitude Double,
+                                                    transactionId String,
+                                                    transactionTimeStamp String,
+                                                    distanceFromHome Double,                                                                          
+                                                    distanceFromPrev Double)
+	COMMENT 'Customer Credit Card Transaction History'
+	PARTITIONED BY (accountType String)
+	CLUSTERED BY (merchantType) INTO 30 BUCKETS
+	STORED AS ORC;"
+	
+	# CREATE Customer Transaction History Table
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+}
+
 retargetNifiFlowReporter() {
 	sleep 1
 	echo "*********************************Getting Nifi Reporting Task Id..."
@@ -87,7 +115,7 @@ retargetNifiFlowReporter() {
 	curl -X DELETE http://$AMBARI_HOST:9090/nifi-api/reporting-tasks/$REPORTING_TASK_ID?version=$REPORTING_TASK_REVISION
 
 	echo "*********************************Instantiating Reporting Task..."
-	PAYLOAD=$(echo "{\"revision\":{\"version\":0},\"component\":{\"name\":\"AtlasFlowReportingTask\",\"type\":\"org.apache.nifi.atlas.reporting.AtlasFlowReportingTask\",\"properties\":{\"Atlas URL\":\"http://$DATAPLANE_ATLAS_HOST:ATLAS_PORT\",\"Nifi URL\":\"http://$AMBARI_HOST:9090\"}}}")
+	PAYLOAD=$(echo "{\"revision\":{\"version\":0},\"component\":{\"name\":\"AtlasFlowReportingTask\",\"type\":\"org.apache.nifi.atlas.reporting.AtlasFlowReportingTask\",\"properties\":{\"Atlas URL\":\"http://$DATAPLANE_ATLAS_HOST:$ATLAS_PORT\",\"Nifi URL\":\"http://$AMBARI_HOST:9090\"}}}")
 
 	REPORTING_TASK_ID=$(curl -d "$PAYLOAD" -H "Content-Type: application/json" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/reporting-tasks|grep -Po '("component":{"id":")([0-9a-zA-z\-]+)'| grep -Po '(:"[0-9a-zA-z\-]+)'| grep -Po '([0-9a-zA-z\-]+)')
 
@@ -226,7 +254,12 @@ cd Utils/DataPlaneUtils
 mvn clean package
 java -jar target/DataPlaneUtils-0.0.1-SNAPSHOT-jar-with-dependencies.jar
 
-echo "*********************************Redeploy Storm Topology..."
+# Recreate TransactionHistory table to reset Atlas qualified name to this cluster
+echo "*********************************Recreating TransactionHistory Table..."
+recreateTransactionHistoryTable
+
+# Redeploy Storm Topology to send topology meta data to Atlas
+echo "*********************************Redeploying Storm Topology..."
 storm kill CreditCardTransactionMonitor
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
 
