@@ -668,6 +668,8 @@ echo "*********************************Setting Ambari-Server to Start on Boot...
 chkconfig --add ambari-server
 chkconfig ambari-server on
 echo "*********************************Installation Complete... "
+
+exit 0
 #yum-config-manager --enable epel
 # Reboot to refresh configuration
 #reboot now

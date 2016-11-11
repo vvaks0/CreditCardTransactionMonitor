@@ -26,7 +26,7 @@ public class CustomerResponseEventJSONScheme implements Scheme {
 		private static final long serialVersionUID = 1L;
 		private static final Charset UTF8 = Charset.forName("UTF-8");
 
-	    public List<Object> deserialize(final byte[] bytes) {
+	    public List<Object> deserialize(byte[] bytes) {
 	        String eventJSONString = new String(bytes, UTF8);
 	        CustomerResponse customerResponse = null;
 	        ObjectMapper mapper = new ObjectMapper();

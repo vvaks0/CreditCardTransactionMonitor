@@ -22,8 +22,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 */
 
-
-
 public class TransactionEventJSONScheme implements KeyValueScheme {
 		private static final long serialVersionUID = 1L;
 		private static final Charset UTF8 = Charset.forName("UTF-8");
