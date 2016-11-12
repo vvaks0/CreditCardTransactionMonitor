@@ -313,7 +313,7 @@ startNifiFlow () {
        			echo "Current Processor ID: $ID"
        			echo "Current Processor TYPE: $TYPE"
 
-       			if ! [[ -z $(echo $TYPE|grep "PutKafka") ]]; then
+       			if ! [[ -z $(echo $TYPE|grep "PutKafka") || -z $(echo $TYPE|grep "PublishKafka_0_10") || -z $(echo $TYPE|grep "PublishKafka") ]]; then
        				echo "***************************This is a PutKafka Processor"
        				echo "***************************Updating Kafka Broker Porperty and Activating Processor..."
        				PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"config\":{\"properties\":{\"Known Brokers\":\"$AMBARI_HOST:6667\"}},\"state\":\"RUNNING\"}}")
