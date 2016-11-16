@@ -133,6 +133,12 @@ getAtlasHost () {
        	echo $ATLAS_HOST
 }
 
+getNifiHost () {
+       	NIFI_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/comonents/NIFI_MASTER|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $NIFI_HOST
+}
+
 ambari-server start
 waitForAmbari
 
@@ -162,6 +168,8 @@ ATLAS_HOST=$(getAtlasHost)
 export ATLAS_HOST=$ATLAS_HOST
 COMETD_HOST=$AMBARI_HOST
 export COMETD_HOST=$COMETD_HOST
+NIFI_HOST=$(getNifiHost)
+export NIFI_HOST=$NIFI_HOST
 env
 
 mkdir /var/run/nifi
@@ -369,7 +377,7 @@ service docker start
 
 #Start UI servlet in Docker
 docker run -d --net=host vvaks/cometd
-docker run -d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST --net=host vvaks/transactionmonitorui
+docker run -d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST -e HTTP_HOST=$NIFI_HOST --net=host vvaks/transactionmonitorui
 
 echo "*********************************Wait 20 seconds for Application to Initialize..."
 sleep 20
