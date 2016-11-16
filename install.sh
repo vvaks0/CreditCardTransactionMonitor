@@ -298,35 +298,40 @@ deployTemplateToNifi () {
 startNifiFlow () {
     echo "*********************************Starting NIFI Flow..."
 	if [ "$INTVERSION" -gt 24 ]; then	     
-       	TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
+    	# Start NIFI Flow HDF 2.x
+    	TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
        	length=${#TARGETS[@]}
        	echo $length
        	echo ${TARGETS[0]}
        	
        	for ((i = 0; i < $length; i++))
-       			do
-       			ID=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '"id":"([a-zA-z0-9\-]+)'|grep -Po ':"([a-zA-z0-9\-]+)'|grep -Po '([a-zA-z0-9\-]+)'|head -1)
-       			REVISION=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '\"version\":([0-9]+)'|grep -Po '([0-9]+)')
-       			TYPE=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '"type":"([a-zA-Z0-9\-.]+)' |grep -Po ':"([a-zA-Z0-9\-.]+)' |grep -Po '([a-zA-Z0-9\-.]+)' |head -1)
-       			echo "Current Processor Path: ${TARGETS[i]}"
-       			echo "Current Processor Revision: $REVISION"
-       			echo "Current Processor ID: $ID"
-       			echo "Current Processor TYPE: $TYPE"
+       	do
+       		ID=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '"id":"([a-zA-z0-9\-]+)'|grep -Po ':"([a-zA-z0-9\-]+)'|grep -Po '([a-zA-z0-9\-]+)'|head -1)
+       		REVISION=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '\"version\":([0-9]+)'|grep -Po '([0-9]+)')
+       		TYPE=$(curl -u admin:admin -i -X GET ${TARGETS[i]} |grep -Po '"type":"([a-zA-Z0-9\-.]+)' |grep -Po ':"([a-zA-Z0-9\-.]+)' |grep -Po '([a-zA-Z0-9\-.]+)' |head -1)
+       		echo "Current Processor Path: ${TARGETS[i]}"
+       		echo "Current Processor Revision: $REVISION"
+       		echo "Current Processor ID: $ID"
+       		echo "Current Processor TYPE: $TYPE"
 
-       			if ! [[ -z $(echo $TYPE|grep "PutKafka") || -z $(echo $TYPE|grep "PublishKafka_0_10") || -z $(echo $TYPE|grep "PublishKafka") ]]; then
-       				echo "***************************This is a PutKafka Processor"
-       				echo "***************************Updating Kafka Broker Porperty and Activating Processor..."
-       				PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"config\":{\"properties\":{\"Known Brokers\":\"$AMBARI_HOST:6667\"}},\"state\":\"RUNNING\"}}")
-       			echo "$PAYLOAD"
+       		if ! [ -z $(echo $TYPE|grep "PutKafka") ] || ! [ -z $(echo $TYPE|grep "PublishKafka") ]; then
+       			echo "***************************This is a PutKafka Processor"
+       			echo "***************************Updating Kafka Broker Porperty and Activating Processor..."
+       			if ! [ -z $(echo $TYPE|grep "PutKafka") ]; then
+                    PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"config\":{\"properties\":{\"Known Brokers\":\"$AMBARI_HOST:6667\"}},\"state\":\"RUNNING\"}}")
+                else
+                    PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"config\":{\"properties\":{\"bootstrap.servers\":\"$AMBARI_HOST:6667\"}},\"state\":\"RUNNING\"}}")
+                fi
        		else
        			echo "***************************Activating Processor..."
-       			PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"state\":\"RUNNING\"}}")
-       			echo "$PAYLOAD"
-       		fi
+       				PAYLOAD=$(echo "{\"id\":\"$ID\",\"revision\":{\"version\":$REVISION},\"component\":{\"id\":\"$ID\",\"state\":\"RUNNING\"}}")
+			fi
+       		echo "$PAYLOAD"
+       		
        		curl -u admin:admin -i -H "Content-Type:application/json" -d "${PAYLOAD}" -X PUT ${TARGETS[i]}
        	done
 	else       	
-       	# Start NIFI Flow
+       	# Start NIFI Flow HDF 1.x
 		echo "*********************************Starting NIFI Flow..."
 		REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
 
@@ -422,6 +427,12 @@ getAtlasHost () {
        	echo $ATLAS_HOST
 }
 
+getNifiHost () {
+       	NIFI_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/comonents/NIFI_MASTER|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $NIFI_HOST
+}
+
 export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
@@ -439,6 +450,8 @@ ATLAS_HOST=$(getAtlasHost)
 export ATLAS_HOST=$ATLAS_HOST
 COMETD_HOST=$AMBARI_HOST
 export COMETD_HOST=$COMETD_HOST
+NIFI_HOST=$(getNifiHost)
+export NIFI_HOST=$NIFI_HOST
 env
 
 echo "export NAMENODE_HOST=$NAMENODE_HOST" >> /etc/bashrc
@@ -456,6 +469,7 @@ echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
 echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> ~/.bash_profile
 echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> ~/.bash_profile
 echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
+echo "export NIFI_HOST=$NIFI_HOST" >> ~/.bash_profile
 
 . ~/.bash_profile
 
