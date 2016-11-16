@@ -53,10 +53,10 @@
     			<groupId>log4j</groupId>
     			<artifactId>log4j</artifactId>
   			</exclusion>
-  			<!-- <exclusion> 
+  			<exclusion> 
     			<groupId>org.apache.curator</groupId>
     			<artifactId>curator-framework</artifactId>
-  			</exclusion> -->
+  			</exclusion>
   		</exclusions>
 	</dependency>
 	<dependency>
