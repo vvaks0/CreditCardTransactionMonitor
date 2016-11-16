@@ -119,7 +119,7 @@ public class CreditCardTransactionMonitorTopology {
 	      
 	      //SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, Constants.customerTransactionValidationTopicName, "/" + Constants.customerTransactionValidationTopicName, UUID.randomUUID().toString());
 	      SpoutConfig customerTransactionValidationKafkaSpoutConfig = new SpoutConfig(hosts, constants.getCustomerTransactionValidationTopicName(), constants.getZkKafkaPath(), UUID.randomUUID().toString());
-	      customerTransactionValidationKafkaSpoutConfig.scheme = new SchemeAsMultiScheme(new CustomerResponseEventJSONScheme());
+	      customerTransactionValidationKafkaSpoutConfig.scheme = new KeyValueSchemeAsMultiScheme(new CustomerResponseEventJSONScheme());
 	      customerTransactionValidationKafkaSpoutConfig.ignoreZkOffsets = true;
 	      customerTransactionValidationKafkaSpoutConfig.useStartOffsetTimeIfOffsetOutOfRange = true;
 	      customerTransactionValidationKafkaSpoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
