@@ -11,38 +11,39 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.hortonworks.iot.financial.events.CustomerResponse;
 
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-//import storm.kafka.KeyValueScheme;
-import backtype.storm.spout.Scheme;
+import org.apache.storm.kafka.StringScheme;
 
 /*
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Values;
+import backtype.storm.spout.Scheme;
+*/
+
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-*/
+
 
 public class CustomerResponseEventJSONScheme implements Scheme  {
 		private static final long serialVersionUID = 1L;
 		private static final Charset UTF8 = Charset.forName("UTF-8");
-
-		public List<Object> deserializeKeyAndValue(byte[] key, byte[] value) {
-			String keyString = new String(key, UTF8); 
-			String eventJSONString = new String(value, UTF8);
-		        CustomerResponse customerResponse = null;
-		        ObjectMapper mapper = new ObjectMapper();
+		
+		@Override
+		public List<Object> deserialize(ByteBuffer value) {
+			String eventJSONString = StringScheme.deserializeString(value);
+		    CustomerResponse customerResponse = null;
+		    ObjectMapper mapper = new ObjectMapper();
 		        
-		        try {
-					customerResponse = mapper.readValue(eventJSONString, CustomerResponse.class);
-				} catch (JsonParseException e) {
-					e.printStackTrace();
-				} catch (JsonMappingException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		        return new Values(customerResponse);
-
+		    try {
+		    	customerResponse = mapper.readValue(eventJSONString, CustomerResponse.class);
+		    } catch (JsonParseException e) {
+		    	e.printStackTrace();
+		    } catch (JsonMappingException e) {
+		    	e.printStackTrace();
+		    } catch (IOException e) {
+		    	e.printStackTrace();
+		    }
+		    return new Values(customerResponse);
 		}
 		
 		public Fields getOutputFields() {
@@ -64,10 +65,5 @@ public class CustomerResponseEventJSONScheme implements Scheme  {
 				e.printStackTrace();
 			}
 	        return new Values(customerResponse);
-		}
-		
-		public List<Object> deserializeKeyAndValue(ByteBuffer arg0, ByteBuffer arg1) {
-			// TODO Auto-generated method stub
-			return null;
 		}
 }
