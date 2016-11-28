@@ -379,8 +379,8 @@ service docker start
 docker run -d --net=host vvaks/cometd
 docker run -d -e MAP_API_KEY=$MAP_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST -e HTTP_HOST=$NIFI_HOST --net=host vvaks/transactionmonitorui
 
-echo "*********************************Wait 20 seconds for Application to Initialize..."
-sleep 20
+#echo "*********************************Wait 10 seconds for Application to Initialize..."
+#sleep 10
 echo "*********************************Access the UI at http://$AMBARI_HOST:8090/TransactionMonitorUI/CustomerOverview"
 
 exit 0
