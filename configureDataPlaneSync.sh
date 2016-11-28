@@ -12,6 +12,11 @@ else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
 
+git clone https://github.com/vakshorton/Utils
+cd Utils
+export ROOT_PATH=$(pwd)
+echo "*********************************ROOT PATH IS: $ROOT_PATH"
+
 getServiceStatus () {
        	SERVICE=$1
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
@@ -126,6 +131,70 @@ PAYLOAD=$(echo "{\"id\":\"$REPORTING_TASK_ID\",\"revision\":{\"version\":1},\"co
 	sleep 1
 }
 
+waitForAmbari () {
+       	# Wait for Ambari
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+        TASKSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep -Po 'OK')
+        if [ "$TASKSTATUS" == OK ]; then
+                LOOPESCAPE="true"
+                TASKSTATUS="READY"
+        else
+               	AUTHSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
+               	if [ "$AUTHSTATUS" == 403 ]; then
+               	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
+               	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
+               	exit 403
+               	else
+                TASKSTATUS="PENDING"
+               	fi
+       	fi
+       	echo "Waiting for Ambari..."
+        echo "Ambari Status... " $TASKSTATUS
+        sleep 2
+       	done
+}
+
+installRangerHivePlugin () {
+       	echo "*********************************Creating Ranger Hive Plugin service..."
+       	# Create Ranger Hive Plugin service
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/RANGER_HIVE_PLUGIN
+
+       	sleep 2
+       	echo "*********************************Adding Ranger Hive Plugin component..."
+       	# Add Ranger Hive Plugin component to service
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/RANGER_HIVE_PLUGIN/components/RANGER_HIVE_PLUGIN
+
+       	sleep 2
+       	echo "*********************************Adding Ranger Hive Plugin role to Host..."
+       	# Add NIFI Master role to Sandbox host
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$HIVESERVER_HOST/host_components/RANGER_HIVE_PLUGIN
+
+       	sleep 30
+       	echo "*********************************Installing Ranger Hive Plugin Service"
+       	# Install NIFI Service
+       	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Ranger Hive Plugin"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/RANGER_HIVE_PLUGIN | grep "id" | grep -Po '([0-9]+)')
+       	
+       	if [ -z $TASKID ]; then
+       		until ! [ -z $TASKID ]; do
+       			TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Ranger Hive Plugin"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}')
+       		 	echo "*********************************AMBARI TaskID " $TASKID
+       		done
+       	fi
+       	
+       	echo "*********************************AMBARI TaskID " $TASKID
+       	sleep 2
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+               	TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+               	if [ "$TASKSTATUS" == COMPLETED ]; then
+                       	LOOPESCAPE="true"
+               	fi
+               	echo "*********************************Task Status" $TASKSTATUS
+               	sleep 2
+       	done
+}
+
 getNameNodeHost () {
        	NAMENODE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HDFS/components/NAMENODE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
        	
@@ -156,13 +225,19 @@ getAtlasHost () {
        	echo $ATLAS_HOST
 }
 
+getRangerHost () {
+       	RANGER_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/RANGER/components/RANGER_ADMIN |grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+       	
+       	echo $RANGER_HOST
+}
+
 #Need to recreate the Environment Variables since shell may have changed and BashRC script may not have loaded
 export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
 HIVESERVER_HOST=$(getHiveServerHost)
 export HIVESERVER_HOST=$HIVESERVER_HOST
-HIVE_METASTORE_HOST=$(getHiveMetaHost)
+HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
 export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
 HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
 export HIVE_METASTORE_URI=$HIVE_METASTORE_URI
@@ -189,31 +264,78 @@ DATAPLANE_ATLAS_HOST=$(getAtlasHost)
 DATAPLANE_KAFKA_BROKER=$(getKafkaBroker)
 DATAPLANE_HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
 DATAPLANE_HIVESERVER_HOST=$(getHiveServerHost)
+DATAPLANE_RANGER_HOST=$(getRangerHost)
+DATAPLANE_NAMENODE_HOST=$(getNameNodeHost)
 env
 
 export ZK_PORT=2181
 export ATLAS_PORT=21000
 export KAFKA_PORT=6667
 export HIVE_METASTORE_PORT=9083
+export RANGER_ADMIN_PORT=6080
+export RANGER_HIVE_REPO=data-plane_hive
 
 export DATAPLANE_HIVE_METASTORE_URI=thrift://$DATAPLANE_HIVE_METASTORE_HOST:$HIVE_METASTORE_PORT
 
 echo "export ATLAS_HOST=$DATAPLANE_ATLAS_HOST" >> /etc/bashrc
 echo "export ATLAS_HOST=$DATAPLANE_ATLAS_HOST" >> ~/.bash_profile
+echo "export RANGER_HOST=$DATAPLANE_RANGER_HOST" >> ~/.bash_profile
+echo "export DATAPLANE_NAMENODE_HOST=$DATAPLANE_NAMENODE_HOST" >> ~/.bash_profile
 echo "export HIVE_METASTORE_HOST=$DATAPLANE_HIVE_METASTORE_HOST" >> /etc/bashrc
 echo "export HIVE_METASTORE_HOST=$DATAPLANE_HIVE_METASTORE_HOST" >> ~/.bash_profile
 echo "export HIVE_METASTORE_JDO_HOST=$DATAPLANE_HIVESERVER_HOST" >> /etc/bashrc
 echo "export HIVE_METASTORE_JDO_HOST=$DATAPLANE_HIVESERVER_HOST" >> ~/.bash_profile
 echo "export HIVE_METASTORE_URI=$DATAPLANE_HIVE_METASTORE_URI" >> ~/.bash_profile
+
 . ~/.bash_profile
 
 echo "********************************DATAPLANE ATLAS ENDPOINT: $DATAPLANE_ATLAS_HOST:$ATLAS_PORT"
 echo "********************************DATAPLANE KAFKA ENDPOINT: $DATAPLANE_KAFKA_BROKER:$KAFKA_PORT"
 echo "********************************DATAPLANE ZOOKEEPER ENDPOINT: $DATAPLANE_ZK_HOST:$ZK_PORT"
+echo "********************************DATAPLANE RANGER ENDPOINT: $DATAPLANE_RANGER_HOST:$RANGER_PORT"
+echo "********************************DATAPLANE NAMENODE: $DATAPLANE_NAMENODE_HOST"
 
 export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9!$\-]+')
+
+echo "*********************************Setting Hive Ranger Plugin Configuration..."
+sed -r -i "s;\{\{ZK_HOST\}\};$DATAPLANE_ZK_HOST;" $ROOT_PATH/hive-ranger-config/ranger-hive-audit
+sed -r -i "s;\{\{NAMENODE_HOST\}\};$DATAPLANE_NAMENODE_HOST;" $ROOT_PATH/hive-ranger-config/ranger-hive-audit
+
+sed -r -i "s;\{\{ZK_HOST\}\};$DATAPLANE_ZK_HOST;" $ROOT_PATH/RANGER_HIVE_PLUGIN/package/configuration/ranger-hive-audit.xml
+sed -r -i "s;\{\{NAMENODE_HOST\}\};$DATAPLANE_NAMENODE_HOST;" $ROOT_PATH/RANGER_HIVE_PLUGIN/package/configuration/ranger-hive-audit.xml
+
+sed -r -i "s;\{\{RANGER_URL\}\};http://$DATAPLANE_RANGER_HOST:$RANGER_ADMIN_PORT;" $ROOT_PATH/hive-ranger-config/ranger-hive-security
+sed -r -i "s;\{\{REPO_NAME\}\};$RANGER_HIVE_REPO;" $ROOT_PATH/hive-ranger-config/ranger-hive-security
+
+sed -r -i "s;\{\{RANGER_URL\}\};http://$DATAPLANE_RANGER_HOST:$RANGER_ADMIN_PORT;" $ROOT_PATH/RANGER_HIVE_PLUGIN/package/configuration/ranger-hive-security.xml
+sed -r -i "s;\{\{REPO_NAME\}\};$RANGER_HIVE_REPO;" $ROOT_PATH/RANGER_HIVE_PLUGIN/package/configuration/ranger-hive-security.xml
+		
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site hive.security.authorization.enabled true
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site hive.conf.restricted.list 	hive.security.authorization.enabled,hive.security.authorization.manager,hive.security.authenticator.manager
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hiveserver2-site hive.security.authorization.enabled true
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hiveserver2-site hive.security.authorization.manager org.apache.ranger.authorization.hive.authorizer.RangerHiveAuthorizerFactory
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hiveserver2-site hive.security.authenticator.manager org.apache.hadoop.hive.ql.security.SessionStateUserAuthenticator 
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME ranger-hive-audit $ROOT_PATH/hive-ranger-config/ranger-hive-audit
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME ranger-hive-plugin-properties $ROOT_PATH/hive-ranger-config/ranger-hive-plugin-properties
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME  ranger-hive-policymgr-ssl $ROOT_PATH/hive-ranger-config/ranger-hive-policymgr-ssl
+		sleep 2
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME ranger-hive-security $ROOT_PATH/hive-ranger-config/ranger-hive-security
+
+echo "*********************************Loading and Installing Ranger Hive Plugin..."
+cp -Rvf $ROOT_PATH/RANGER_HIVE_PLUGIN /var/lib/ambari-server/resources/stacks/HDP/2.5/services/
+
+ambari-server restart
+waitForAmbari
+installRangerHivePlugin
 
 echo "*********************************Setting Hive Atlas Client Configuration..."
 /var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "atlas.rest.address" "$DATAPLANE_ATLAS_HOST:$ATLAS_PORT"
@@ -249,8 +371,7 @@ startService STORM
 sleep 1
 startService SQOOP
 
-git clone https://github.com/vakshorton/Utils
-cd Utils/DataPlaneUtils
+cd $ROOT_PATH/DataPlaneUtils
 mvn clean package
 java -jar target/DataPlaneUtils-0.0.1-SNAPSHOT-jar-with-dependencies.jar
 
