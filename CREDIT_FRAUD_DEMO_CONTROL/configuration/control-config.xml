@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+ 
+<configuration>
+
+  <property require-input="true">
+    <name>democontrol.install_dir</name>
+    <value>/root</value>
+    <description>Directory under which demo control utility will be installed</description>
+  </property> 
+
+  <property require-input="true">
+    <name>democontrol.download_url</name>
+    <value>https://github.com/vakshorton/CreditCardTransactionMonitor</value>
+    <description>Online location to download Simulator package</description>
+  </property> 
+
+  <property require-input="true">
+    <name>democontrol.nifi_host_ip</name>
+    <value></value>
+    <description>IP address of host where Nifi is listening</description>
+  </property>   
+</configuration>
