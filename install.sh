@@ -577,6 +577,10 @@ cp -vf appConfig.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf metainfo.json /home/docker/dockerbuild/transactionmonitorui
 cp -vf resources.json /home/docker/dockerbuild/transactionmonitorui
 
+echo "*********************************Copy redeployApplication.sh to /root"
+cd $ROOT_PATH
+cp -Rvf $ROOT_PATH/redeployApplication.sh
+
 echo "*********************************Load Demo Control Service into Ambari"
 cd $ROOT_PATH
 cp -Rvf $ROOT_PATH/CREDIT_FRAUD_DEMO_CONTROL /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
