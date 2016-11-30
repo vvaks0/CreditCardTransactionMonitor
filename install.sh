@@ -581,6 +581,10 @@ echo "*********************************Load Demo Control Service into Ambari"
 cd $ROOT_PATH
 cp -Rvf $ROOT_PATH/CREDIT_FRAUD_DEMO_CONTROL /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
 
+echo "*********************************Load Data Plane Client Service into Ambari"
+git clone https://github.com/vakshorton/Utils
+cp -Rvf $ROOT_PATH/Utils/DATA_PLANE_CLIENT /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
+
 # Build from source
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
 cd $ROOT_PATH/CreditCardTransactionMonitor
