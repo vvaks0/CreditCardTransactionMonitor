@@ -41,7 +41,7 @@ PAYLOAD=$(echo "{\"id\":\"$REPORTING_TASK_ID\",\"revision\":{\"version\":1},\"co
 recreateTransactionHistoryTable () {
 	HQL="DROP TABLE TransactionHistory;"
 	# CREATE Customer Transaction History Table
-	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 	
 	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
                                                     fraudulent String,
@@ -62,7 +62,7 @@ recreateTransactionHistoryTable () {
 	STORED AS ORC;"
 	
 	# CREATE Customer Transaction History Table
-	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 }
 
 #cd $ROOT_PATH/DataPlaneUtils
