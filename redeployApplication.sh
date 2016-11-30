@@ -39,7 +39,6 @@ PAYLOAD=$(echo "{\"id\":\"$REPORTING_TASK_ID\",\"revision\":{\"version\":1},\"co
 }
 
 recreateTransactionHistoryTable () {
-	HIVESERVER_HOST=$(getHiveServerHost)
 	HQL="DROP TABLE TransactionHistory;"
 	# CREATE Customer Transaction History Table
 	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
