@@ -67,6 +67,7 @@ recreateTransactionHistoryTable () {
 
 echo "*********************************Setting Environment..."
 . ~/.bash_profile
+env
 
 #cd $ROOT_PATH/DataPlaneUtils
 #mvn clean package
