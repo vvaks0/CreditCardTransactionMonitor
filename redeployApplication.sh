@@ -65,6 +65,9 @@ recreateTransactionHistoryTable () {
 	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 }
 
+echo "*********************************Setting Environment..."
+. ~/.bash_profile
+
 #cd $ROOT_PATH/DataPlaneUtils
 #mvn clean package
 #java -jar target/DataPlaneUtils-0.0.1-SNAPSHOT-jar-with-dependencies.jar
