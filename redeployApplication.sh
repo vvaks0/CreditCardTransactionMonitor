@@ -1,11 +1,16 @@
 #!/bin/bash
 
+echo "*********************************Setting Environment..."
+. ~/.bash_profile
+
 export NIFI_HOST=$1
 export NIFI_PORT=$2
 export ATLAS_HOST=$3
 export ATLAS_PORT=$4
 export HIVESERVER_HOST=$5
 export HIVESERVER_PORT=$6
+
+env
 
 retargetNifiFlowReporter() {
 	sleep 1
@@ -64,10 +69,6 @@ recreateTransactionHistoryTable () {
 	# CREATE Customer Transaction History Table
 	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 }
-
-echo "*********************************Setting Environment..."
-. ~/.bash_profile
-env
 
 #cd $ROOT_PATH/DataPlaneUtils
 #mvn clean package
