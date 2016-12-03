@@ -82,7 +82,7 @@ recreateTransactionHistoryTable
 echo "*********************************Redeploying Storm Topology..."
 storm kill CreditCardTransactionMonitor
 
-curl -u admin:admin -X DELETE 'http://$ATLAS_HOST:$ATLAS_PORT/api/atlas/entities?type=storm_topology&property=qualifiedName&value=CreditCardTransactionMonitor'
+curl -u admin:admin -X DELETE 'http://'"$ATLAS_HOST:$ATLAS_PORT"'/api/atlas/entities?type=storm_topology&property=qualifiedName&value=CreditCardTransactionMonitor'
 
 storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
 
