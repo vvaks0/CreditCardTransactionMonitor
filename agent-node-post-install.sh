@@ -95,4 +95,9 @@ env
 
 yum install -y phoenix
 
+echo "*********************************Set Hive Scratch Folder..."
+mkdir /tmp/hive
+chmod 777 /tmp
+chmod 777 /tmp/hive
+
 exit 0
