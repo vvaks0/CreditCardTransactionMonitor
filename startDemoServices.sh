@@ -21,6 +21,37 @@ getServiceStatus () {
        	echo $SERVICE_STATUS
 }
 
+waitForAmbari () {
+       	# Wait for Ambari
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+        TASKSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep -Po 'OK')
+        if [ "$TASKSTATUS" == OK ]; then
+                LOOPESCAPE="true"
+                TASKSTATUS="READY"
+        else
+               	AUTHSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
+               	if [ "$AUTHSTATUS" == 403 ]; then
+               	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
+               	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
+               	exit 403
+               	else
+                TASKSTATUS="PENDING"
+               	fi
+       	fi
+       	echo "Waiting for Ambari..."
+        echo "Ambari Status... " $TASKSTATUS
+        sleep 2
+       	done
+}
+
+getServiceStatus () {
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+
+       	echo $SERVICE_STATUS
+}
+
 waitForService () {
        	# Ensure that Service is not in a transitional state
        	SERVICE=$1
@@ -62,30 +93,6 @@ startService (){
        	elif [ "$SERVICE_STATUS" == STARTED ]; then
        	echo "*********************************$SERVICE Service Started..."
        	fi
-}
-
-waitForAmbari () {
-       	# Wait for Ambari
-       	LOOPESCAPE="false"
-       	until [ "$LOOPESCAPE" == true ]; do
-        TASKSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep -Po 'OK')
-        if [ "$TASKSTATUS" == OK ]; then
-                LOOPESCAPE="true"
-                TASKSTATUS="READY"
-        else
-               	AUTHSTATUS=$(curl -u admin:admin -I -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME | grep HTTP | grep -Po '( [0-9]+)'| grep -Po '([0-9]+)')
-               	if [ "$AUTHSTATUS" == 403 ]; then
-               	echo "THE AMBARI PASSWORD IS NOT SET TO: admin"
-               	echo "RUN COMMAND: ambari-admin-password-reset, SET PASSWORD: admin"
-               	exit 403
-               	else
-                TASKSTATUS="PENDING"
-               	fi
-       	fi
-       	echo "Waiting for Ambari..."
-        echo "Ambari Status... " $TASKSTATUS
-        sleep 2
-       	done
 }
 
 startNifiFlowReporter() {
@@ -358,13 +365,13 @@ fi
 
 # Deploy Storm Topology
 echo "*********************************Deploying Storm Topology..."
-storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
+storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology $CLUSTER_NAME
 
 # Start Nifi Flow Reporter to send flow meta data to Atlas
 sleep 5
 startNifiFlowReporter
 
-echo "*********************************Deploying Application Container to..."
+echo "*********************************Deploying Application Container ..."
 # Ensure docker service is running
 service docker start
 
