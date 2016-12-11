@@ -74,9 +74,17 @@ import storm.kafka.ZkHosts;
 */
 
 public class CreditCardTransactionMonitorTopology {
+	 static String topologyName = "CreditCardTransactionMonitor";
 	 public static void main(String[] args) {
 	     TopologyBuilder builder = new TopologyBuilder();
-	     Constants constants = new Constants();   
+	     Constants constants = new Constants();
+	     String hostClusterName = null; 
+	     String transactionsTable = "transaction_history";
+	     if(args[0] != null){
+	     	hostClusterName = args[0];
+	    	topologyName = "CreditCardTransactionMonitor-"+hostClusterName;
+	    	transactionsTable = "transaction_history_"+hostClusterName;
+	     }
 	     // Use pipe as record boundary
 	  	  RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
 
@@ -170,7 +178,7 @@ public class CreditCardTransactionMonitorTopology {
 	    		 
 	      HiveOptions processedTransactionHiveOptions = new HiveOptions(constants.getHiveMetaStoreURI(),
 	    				 							constants.getHiveDbName(),
-	    				 							"transactionhistory",
+	    				 							transactionsTable,
 	    				 							processedTransactionHiveMapper);
 	      
 	      builder.setSpout("IncomingTransactionsKafkaSpout", incomingTransactionsKafkaSpout);
@@ -199,12 +207,12 @@ public class CreditCardTransactionMonitorTopology {
 	 
 	 public static void submitToLocal(TopologyBuilder builder, Config conf){
 		 LocalCluster cluster = new LocalCluster();
-		 cluster.submitTopology("CreditCardTransactionMonitor", conf, builder.createTopology()); 
+		 cluster.submitTopology(topologyName, conf, builder.createTopology()); 
 	 }
 	 
 	 public static void submitToCluster(TopologyBuilder builder, Config conf){
 		 try {
-				StormSubmitter.submitTopology("CreditCardTransactionMonitor", conf, builder.createTopology());
+				StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
 		      } catch (AlreadyAliveException e) {
 				e.printStackTrace();
 		      } catch (InvalidTopologyException e) {
