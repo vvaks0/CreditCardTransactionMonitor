@@ -242,16 +242,16 @@ public class FraudDetector extends BaseRichBolt {
 						+ "\"Transactions\".\"merchantType\" VARCHAR, "
 						+ "\"Transactions\".\"frauduent\" VARCHAR, "
 						+ "\"Transactions\".\"merchantId\" VARCHAR, "
-						+ "\"Transactions\".\"amount\" INTEGER, "
+						+ "\"Transactions\".\"amount\" DOUBLE, "
 						+ "\"Transactions\".\"currency\" VARCHAR, "
 						+ "\"Transactions\".\"isCardPresent\" VARCHAR, "
-						+ "\"Transactions\".\"latitude\" FLOAT, "
-						+ "\"Transactions\".\"longitude\" FLOAT, "
+						+ "\"Transactions\".\"latitude\" DOUBLE, "
+						+ "\"Transactions\".\"longitude\" DOUBLE, "
 						+ "\"Transactions\".\"ipAddress\" VARCHAR, "
 						+ "\"Transactions\".\"transactionId\" VARCHAR, "
 						+ "\"Transactions\".\"transactionTimeStamp\" BIGINT, "
-						+ "\"Transactions\".\"distanceFromHome\" FLOAT, "
-						+ "\"Transactions\".\"distanceFromPrev\" FLOAT)");
+						+ "\"Transactions\".\"distanceFromHome\" DOUBlE, "
+						+ "\"Transactions\".\"distanceFromPrev\" DOUBLE)");
 				conn.commit();
 				conn.close();
 				
