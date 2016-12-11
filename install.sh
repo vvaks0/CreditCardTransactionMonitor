@@ -1,29 +1,10 @@
 #!/bin/bash
 
-#Get Kafka Broker Id per Topic - zookeeper-client get /brokers/topics/IncomingTransactions/partitions/0/state |grep leader |grep -Po '"leader":([0-9])+'|grep -Po '([0-9])+'
-#Get Kafka Broker per Id - zookeeper-client get /brokers/ids/1001|grep -Po '"host":"([a-zA-Z\-0-9.]+)'|grep -Po ':"([a-zA-Z\-0-9.]+)'|grep -Po '([a-zA-Z\-0-9.]+)'
-#Get Atlas Host - /var/lib/ambari-server/resources/scripts/configs.sh get vvaks-1 CreditFraudDemo application-properties |grep "atlas.rest.address"|grep -Po '//([a-zA-z\-0-9.])+'|grep -Po '([a-zA-z\-0-9.])+'
-
-#export AMBARI_HOST=$(cat /etc/ambari-agent/conf/ambari-agent.ini| grep hostname= |grep -Po '([0-9.]+)')
-
-#cd /usr
-#wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u101-b13/jdk-8u101-linux-x64.tar.gz"
-#tar -vxzf jdk-8u101-linux-x64.tar.gz
-#alternatives --install /usr/bin/java java /usr/jdk1.8.0_101/bin/java 3
-#alternatives --install /usr/bin/javac javac /usr/jdk1.8.0_101/bin/javac 3
-#alternatives --install /usr/bin/jar jar /usr/jdk1.8.0_101/bin/jar 3
-#alternatives --set java /usr/jdk1.8.0_101/bin/java
-#alternatives --set javac /usr/jdk1.8.0_101/bin/javac
-#alternatives --set jar /usr/jdk1.8.0_101/bin/jar
-#export JAVA_HOME=/usr/jdk1.8.0_101
-#echo "export JAVA_HOME=/usr/jdk1.8.0_101" >> /etc/bashrc
-
-#yum-config-manager --disable epel
 if [ ! -d "/usr/jdk64" ]; then
 	echo "*********************************Install and Enable Oracle JDK 8"
-	wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u101-b13/jdk-8u101-linux-x64.tar.gz"
-	tar -vxzf jdk-8u101-linux-x64.tar.gz -C /usr
-	mv /usr/jdk1.8.0_101 /usr/jdk64
+	wget http://public-repo-1.hortonworks.com/ARTIFACTS/jdk-8u77-linux-x64.tar.gz
+	tar -vxzf jdk-8u77-linux-x64.tar.gz -C /usr
+	mv /usr/jdk1.8.0_77 /usr/jdk64
 	alternatives --install /usr/bin/java java /usr/jdk64/bin/java 3
 	alternatives --install /usr/bin/javac javac /usr/jdk64/bin/javac 3
 	alternatives --install /usr/bin/jar jar /usr/jdk64/bin/jar 3
@@ -149,11 +130,8 @@ getLatestNifiBits () {
        		echo "*********************************Removing Current Version of NIFI..."
        		rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
 
-       		echo "*********************************Downloading Newest Version of NIFI..."
-       		git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
-       		
-       		echo "*********************************Restarting Ambari..."
-			ambari-server restart
+       	echo "*********************************Downloading Newest Version of NIFI..."
+       	git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
        	fi
 }
 
@@ -433,6 +411,21 @@ configureYarnMemory () {
 	fi	
 }
 
+configureHiveACID () {
+	echo "*********************************Configuring Hive ACID..."
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.support.concurrency" "true"
+	sleep 1	
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.txn.manager" "org.apache.hadoop.hive.ql.lockmgr.DbTxnManager"
+	sleep 1	
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.exec.dynamic.partition.mode" "nonstrict"
+	sleep 1	
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.enforce.bucketing" "true"
+	sleep 1	
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.compactor.worker.threads" "1"
+	sleep 1	
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hive-site "hive.compactor.initiator.on" "true"
+}
+
 createTransactionHistoryTable () {
 	HIVESERVER_HOST=$(getHiveServerHost)
 	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
@@ -448,13 +441,12 @@ createTransactionHistoryTable () {
                                                     transactionTimeStamp String,
                                                     distanceFromHome Double,                                                                          
                                                     distanceFromPrev Double)
-	COMMENT 'Customer Credit Card Transaction History'
 	PARTITIONED BY (accountType String)
 	CLUSTERED BY (merchantType) INTO 30 BUCKETS
-	STORED AS ORC;"
+	STORED AS ORCTBLPROPERTIES (\"transactional\"=\"true\");"
 	
 	# CREATE Customer Transaction History Table
-	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL"
+	beeline -u jdbc:hive2://$HIVESERVER_HOST:10000/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 }
 
 getNameNodeHost () {
@@ -489,7 +481,7 @@ getAtlasHost () {
 
 getNifiHost () {
        	NIFI_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_MASTER|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
-       	
+
        	echo $NIFI_HOST
 }
 
@@ -560,16 +552,11 @@ chkconfig docker on
 echo " 				  *****************Create /root HDFS folder for Slider..."
 hadoop fs -mkdir /user/root/
 hadoop fs -chown root:hdfs /user/root/
-
 #Create Docker working folder
 echo " 				  *****************Creating Docker Home Folder..."
 mkdir /home/docker/
 mkdir /home/docker/dockerbuild/
 mkdir /home/docker/dockerbuild/transactionmonitorui
-
-#Create TransactionHistory Hive Table for Storm topology
-echo "*********************************Creating TransactionHistory Hive Table..."
-createTransactionHistoryTable
 
 echo "*********************************Staging Slider Configurations..."
 cd $ROOT_PATH/SliderConfig
@@ -596,12 +583,6 @@ mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
 
 # Build from source
-#echo "*********************************Building Credit Card Transaction Simulator"
-#cd $ROOT_PATH/CreditCardTransactionSimulator
-#mvn clean package
-#cp -vf target/CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar #$ROOT_PATH
-
-# Build from source
 echo "*********************************Building Nifi Atlas Reporter"
 cd $ROOT_PATH
 git clone https://github.com/vakshorton/NifiAtlasBridge.git
@@ -615,6 +596,7 @@ NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
 if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
        	echo "*********************************NIFI Service Not Present, Installing..."
        	getLatestNifiBits
+       	ambari-server restart
        	waitForAmbari
        	installNifiService
        	
@@ -627,7 +609,7 @@ if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
         	NIFI_HOME=$(ls /opt/|grep HDF)
 		fi
 		export NIFI_HOME
-
+		
 		mv -vf  $ROOT_PATH/NifiAtlasBridge/NifiAtlasFlowReportingTask/target/NifiAtlasFlowReportingTask-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
 		
 		mv -vf  $ROOT_PATH/NifiAtlasBridge/NifiAtlasLineageReportingTask/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
@@ -718,6 +700,20 @@ else
        	echo "*********************************HBASE Service Started..."
 fi
 
+HIVE_STATUS=$(getServiceStatus HIVE)
+echo "*********************************Checking HIVE status..."
+if ! [[ $HIVE_STATUS == STARTED || $HIVE_STATUS == INSTALLED ]]; then
+       	echo "*********************************HIVE is in a transitional state, waiting..."
+       	waitForService HIVE
+       	echo "*********************************HIVE has entered a ready state..."
+fi
+
+if [[ $HIVE_STATUS == INSTALLED ]]; then
+       	startService HIVE
+else
+       	echo "*********************************HIVE Service Started..."
+fi
+
 STORM_STATUS=$(getServiceStatus STORM)
 echo "*********************************Checking STORM status..."
 if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
@@ -726,21 +722,14 @@ if ! [[ $STORM_STATUS == STARTED || $STORM_STATUS == INSTALLED ]]; then
        	echo "*********************************STORM has entered a ready state..."
 fi
 
-echo "*********************************Stoping STORM Service..."
-STORM_STATUS=$(getServiceStatus STORM)
-if [[ $STORM_STATUS == STARTED ]]; then
-       	stopService STORM
-else
-       	echo "*********************************STORM Service Stopped..."
-fi
-
-echo "*********************************Starting STORM Service..."
-STORM_STATUS=$(getServiceStatus STORM)
 if [[ $STORM_STATUS == INSTALLED ]]; then
        	startService STORM
 else
        	echo "*********************************STORM Service Started..."
 fi
+
+stopService STORM
+startService STORM
 
 # Download Docker Images
 echo "*********************************Downloading Docker Images for UI..."
@@ -753,12 +742,27 @@ configureYarnMemory
 enablePhoenix
 stopService HBASE
 startService HBASE
+echo "*********************************Checking Hive Configurations..."
+echo " 				  *****************Set Hive Scratch Folder..."
+mkdir /tmp/hive
+chmod 777 /tmp
+chmod 777 /tmp/hive
+hadoop fs -mkdir /tmp/hive/
+hadoop fs -chmod 777 /tmp/
+hadoop fs -chmod 777 /tmp/hive/
+hadoop fs -chown hive:hdfs /tmp/hive/
+configureHiveACID
+stopService HIVE
+startService HIVE
+#Create Transaction History Hive Table for Storm topology
+echo "*********************************Creating TransactionHistory Hive Table..."
+createTransactionHistoryTable
+
 echo "*********************************Setting Ambari-Server to Start on Boot..."
 chkconfig --add ambari-server
 chkconfig ambari-server on
 echo "*********************************Installation Complete... "
 
 exit 0
-#yum-config-manager --enable epel
 # Reboot to refresh configuration
 #reboot now
