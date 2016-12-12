@@ -130,7 +130,7 @@ public class FraudDetector extends BaseRichBolt {
 																				   transaction.getFraudulent()+"','"+
 																				   transaction.getAmount()+",'"+
 																				   transaction.getCurrency()+"','"+
-																				   transaction.getIpAddress()+"'," +
+																				   transaction.getIpAddress()+"_'," +
 																				   transaction.getIsCardPresent()+"','" +
 																				   transaction.getLatitude()+"," +
 																				   transaction.getLongitude()+",'"+
