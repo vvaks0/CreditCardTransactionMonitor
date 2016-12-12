@@ -78,7 +78,7 @@ public class FraudDetector extends BaseRichBolt {
 		String transactionKey = stormProvenance.get(0).getEventKey();
 	    StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
 	    provenanceEvent.setTargetDataRepositoryType("HBASE");
-	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath());// + ":" + transactionHistoryTable.getName().getNameAsString());
+	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath() + ":" + transactionHistoryTable.getName().getNameAsString());
 	    stormProvenance.add(provenanceEvent);
 		
 		try {
@@ -280,6 +280,17 @@ public class FraudDetector extends BaseRichBolt {
 						+ "\"Transactions\".\"distanceFromPrev\" DOUBLE)");
 				conn.commit();
 				
+				while(!hbaseAdmin.tableExists("TransactionHistory")){ 
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					System.out.println("******************** EnrichTransaction prepare() Waiting for Phoenix Tables to be created..."); 
+				}
+				System.out.println("******************** EnrichTransaction prepare() Phoenix Tables created...");
+				
+				transactionHistoryTable = new HTable(config, "TransactionHistory");
 				/* transactionHistoryTable = new HTable(config, "TransactionHistory");
 				HTableDescriptor tableDescriptor = new HTableDescriptor("TransactionHistory");
 				HColumnDescriptor cfColumnFamily = new HColumnDescriptor("Transactions".getBytes());
