@@ -34,6 +34,8 @@ import com.hortonworks.iot.financial.util.Model;
 import com.hortonworks.iot.financial.util.Profile;
 import com.hortonworks.iot.financial.util.StormProvenanceEvent;
 
+import clojure.lang.BigInt;
+
 /*
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -120,21 +122,21 @@ public class FraudDetector extends BaseRichBolt {
 	@SuppressWarnings("deprecation")
 	public void persistTransactionToHbase(EnrichedTransaction transaction){
 		Put transactionToPersist = new Put(Bytes.toBytes(transaction.getTransactionId()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes(transaction.getAccountNumber()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"), Bytes.toBytes(transaction.getAccountType()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes(transaction.getFraudulent()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantId"), Bytes.toBytes(transaction.getMerchantId()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes(transaction.getMerchantType()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("amount"), Bytes.toBytes(transaction.getAmount()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("currency"), Bytes.toBytes(transaction.getCurrency()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("isCardPresent"), Bytes.toBytes(transaction.getIsCardPresent()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("latitude"), Bytes.toBytes(transaction.getLatitude()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("longitude"), Bytes.toBytes(transaction.getLongitude()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("ipAddress"), Bytes.toBytes(transaction.getIpAddress()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionId"), Bytes.toBytes(transaction.getTransactionId()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionTimeStamp"), Bytes.toBytes(transaction.getTransactionTimeStamp()));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromHome"), Bytes.toBytes(String.valueOf(transaction.getDistanceFromHome())));
-		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromPrev"), Bytes.toBytes(String.valueOf(transaction.getDistanceFromPrev())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes(String.valueOf(transaction.getAccountNumber())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"), Bytes.toBytes(String.valueOf(transaction.getAccountType())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes(String.valueOf(transaction.getFraudulent())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantId"), Bytes.toBytes(String.valueOf(transaction.getMerchantId())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"), Bytes.toBytes(String.valueOf(transaction.getMerchantType())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("amount"), Bytes.toBytes(Double.valueOf(transaction.getAmount())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("currency"), Bytes.toBytes(String.valueOf(transaction.getCurrency())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("isCardPresent"), Bytes.toBytes(String.valueOf(transaction.getIsCardPresent())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("latitude"), Bytes.toBytes(Double.valueOf(transaction.getLatitude())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("longitude"), Bytes.toBytes(Double.valueOf(transaction.getLongitude())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("ipAddress"), Bytes.toBytes(String.valueOf(transaction.getIpAddress())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionId"), Bytes.toBytes(String.valueOf(transaction.getTransactionId())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionTimeStamp"), Bytes.toBytes(Long.valueOf(transaction.getTransactionTimeStamp())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromHome"), Bytes.toBytes(Double.valueOf(transaction.getDistanceFromHome())));
+		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromPrev"), Bytes.toBytes(Double.valueOf(transaction.getDistanceFromPrev())));
 		try {
 			transactionHistoryTable.put(transactionToPersist);
 		} catch (IOException e) {
