@@ -138,7 +138,7 @@ public class FraudDetector extends BaseRichBolt {
 																				   transaction.getTransactionTimeStamp()+","+
 																				   transaction.getDistanceFromHome()+","+
 																				   transaction.getDistanceFromPrev()+")";
-		
+		System.out.println("*************** UPSERT STATEMENT: " + currentTransaction);
 		try {
 			conn.createStatement().executeUpdate(currentTransaction);
 			conn.commit();
