@@ -78,7 +78,7 @@ public class FraudDetector extends BaseRichBolt {
 		String transactionKey = stormProvenance.get(0).getEventKey();
 	    StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
 	    provenanceEvent.setTargetDataRepositoryType("HBASE");
-	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath() + ":" + transactionHistoryTable.getName().getNameAsString());
+	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath());// + ":" + transactionHistoryTable.getName().getNameAsString());
 	    stormProvenance.add(provenanceEvent);
 		
 		try {
