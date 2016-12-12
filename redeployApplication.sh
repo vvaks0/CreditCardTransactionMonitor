@@ -78,13 +78,20 @@ recreateTransactionHistoryTable () {
 echo "*********************************Recreating TransactionHistory Table..."
 recreateTransactionHistoryTable
 
+cd /root/Utils/SparkPhoenixETL
+rm -Rvf classes*
+mvn clean package
+mv target/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar /home/spark
+
+spark-submit --class com.hortonworks.util.SparkPhoenixETL --master yarn-client --executor-cores 2 --driver-memory 2G --executor-memory 2G --num-executors 1 /home/spark/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar $ZK_HOST:2181:/hbase-unsecure $CLUSTER_NAME CreditFraud
+
 # Redeploy Storm Topology to send topology meta data to Atlas
 echo "*********************************Redeploying Storm Topology..."
-storm kill CreditCardTransactionMonitor
+storm kill CreditCardTransactionMonitor-$CLUSTER_NAME
 
-curl -u admin:admin -X DELETE 'http://'"$ATLAS_HOST:$ATLAS_PORT"'/api/atlas/entities?type=storm_topology&property=qualifiedName&value=CreditCardTransactionMonitor'
+curl -u admin:admin -X DELETE 'http://'"$ATLAS_HOST:$ATLAS_PORT"'/api/atlas/entities?type=storm_topology&property=qualifiedName&value=CreditCardTransactionMonitor-'"$CLUSTER_NAME"
 
-storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology
+storm jar /home/storm/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar com.hortonworks.iot.financial.topology.CreditCardTransactionMonitorTopology $CLUSTER_NAME
 
 # Start Nifi Flow Reporter to send flow meta data to Atlas
 echo "*********************************Retargeting Nifi Flow Reporting Task..."
