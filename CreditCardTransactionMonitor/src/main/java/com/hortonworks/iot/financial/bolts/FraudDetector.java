@@ -138,7 +138,7 @@ public class FraudDetector extends BaseRichBolt {
 						+ "\"Transactions\".\"transactionId\", "
 						+ "\"Transactions\".\"transactionTimeStamp\", "
 						+ "\"Transactions\".\"distanceFromHome\", "
-						+ "\"Transactions\".\"distanceFromPrev\" "
+						+ "\"Transactions\".\"distanceFromPrev\") "
 						+ " VALUES('"+ transaction.getTransactionId()+"','"
 						+ transaction.getAccountNumber()+"','"
 						+ transaction.getAccountType()+"','"
