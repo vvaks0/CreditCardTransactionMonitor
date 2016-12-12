@@ -258,6 +258,8 @@ public class FraudDetector extends BaseRichBolt {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
 			if (hbaseAdmin.tableExists("TransactionHistory")) {
 				transactionHistoryTable = new HTable(config, "TransactionHistory");
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
 			}else{
 				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
 				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
