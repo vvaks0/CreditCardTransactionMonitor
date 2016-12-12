@@ -53,7 +53,7 @@ recreateTransactionHistoryTable () {
                                                     fraudulent String,
                                                     merchantId String,
                                                     merchantType String,
-                                                    amount Int,
+                                                    amount Double,
                                                     currency String,
                                                     isCardPresent String,
                                                     latitude Double,
