@@ -126,8 +126,8 @@ public class FraudDetector extends BaseRichBolt {
 		String currentTransaction = "UPSERT INTO \"TransactionHistory\" VALUES('"+transaction.getAccountNumber()+"','"+
 																				   transaction.getAccountType()+"','"+
 																				   transaction.getMerchantId()+"','"+
-																				   transaction.getMerchantType()+"',"+
-																				   transaction.getFraudulent()+"','"+
+																				   transaction.getMerchantType()+"','"+
+																				   transaction.getFraudulent()+"',"+
 																				   transaction.getAmount()+",'"+
 																				   transaction.getCurrency()+"','"+
 																				   transaction.getIpAddress()+"_'," +
