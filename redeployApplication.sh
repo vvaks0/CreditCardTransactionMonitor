@@ -9,6 +9,7 @@ export ATLAS_HOST=$3
 export ATLAS_PORT=$4
 export HIVESERVER_HOST=$5
 export HIVESERVER_PORT=$6
+export CLUSTER_NAME=$7
 
 env
 
