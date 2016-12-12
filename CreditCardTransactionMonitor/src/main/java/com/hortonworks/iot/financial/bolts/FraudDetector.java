@@ -259,7 +259,8 @@ public class FraudDetector extends BaseRichBolt {
 			//if (hbaseAdmin.tableExists("TransactionHistory")) {
 			//	transactionHistoryTable = new HTable(config, "TransactionHistory");
 			//}else{
-				
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
 				conn.createStatement().executeUpdate("create table if not exists \"TransactionHistory\" "
 						+ "(pk VARCHAR PRIMARY KEY, "
 						+ "\"Transactions\".\"accountNumber\" VARCHAR, "
@@ -302,6 +303,9 @@ public class FraudDetector extends BaseRichBolt {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
