@@ -65,6 +65,7 @@ public class FraudDetector extends BaseRichBolt {
 	private String componentId;
 	private String componentType;
 	private Constants constants;
+	private Connection conn = null;
 	
 	//private SparkContext sc;
 	
@@ -121,6 +122,31 @@ public class FraudDetector extends BaseRichBolt {
 	
 	@SuppressWarnings("deprecation")
 	public void persistTransactionToHbase(EnrichedTransaction transaction){
+		
+		String currentTransaction = "UPSERT INTO \"TransactionHistory\" VALUES('"+transaction.getAccountNumber()+"','"+
+																				   transaction.getAccountType()+"','"+
+																				   transaction.getMerchantId()+"','"+
+																				   transaction.getMerchantType()+"',"+
+																				   transaction.getFraudulent()+"','"+
+																				   transaction.getAmount()+",'"+
+																				   transaction.getCurrency()+"','"+
+																				   transaction.getIpAddress()+"'," +
+																				   transaction.getIsCardPresent()+"','" +
+																				   transaction.getLatitude()+"," +
+																				   transaction.getLongitude()+",'"+
+																				   transaction.getTransactionId()+"',"+
+																				   transaction.getTransactionTimeStamp()+","+
+																				   transaction.getDistanceFromHome()+","+
+																				   transaction.getDistanceFromPrev()+")";
+		
+		try {
+			conn.createStatement().executeUpdate(currentTransaction);
+			conn.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		/*
 		Put transactionToPersist = new Put(Bytes.toBytes(transaction.getTransactionId()));
 		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"), Bytes.toBytes(String.valueOf(transaction.getAccountNumber())));
 		transactionToPersist.add(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"), Bytes.toBytes(String.valueOf(transaction.getAccountType())));
@@ -141,7 +167,7 @@ public class FraudDetector extends BaseRichBolt {
 			transactionHistoryTable.put(transactionToPersist);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -230,41 +256,36 @@ public class FraudDetector extends BaseRichBolt {
 	    // Instantiating HTable
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
-			
-			if (hbaseAdmin.tableExists("TransactionHistory")) {
-				transactionHistoryTable = new HTable(config, "TransactionHistory");
-			}else{
-				Connection conn;
-				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
-				conn.createStatement().executeUpdate("create table \"TransactionHistory\" "
+			//if (hbaseAdmin.tableExists("TransactionHistory")) {
+			//	transactionHistoryTable = new HTable(config, "TransactionHistory");
+			//}else{
+				
+				conn.createStatement().executeUpdate("create table if not exists \"TransactionHistory\" "
 						+ "(pk VARCHAR PRIMARY KEY, "
 						+ "\"Transactions\".\"accountNumber\" VARCHAR, "
 						+ "\"Transactions\".\"accountType\" VARCHAR, "
+						+ "\"Transactions\".\"merchantId\" VARCHAR, "
 						+ "\"Transactions\".\"merchantType\" VARCHAR, "
 						+ "\"Transactions\".\"frauduent\" VARCHAR, "
-						+ "\"Transactions\".\"merchantId\" VARCHAR, "
 						+ "\"Transactions\".\"amount\" DOUBLE, "
 						+ "\"Transactions\".\"currency\" VARCHAR, "
+						+ "\"Transactions\".\"ipAddress\" VARCHAR, "
 						+ "\"Transactions\".\"isCardPresent\" VARCHAR, "
 						+ "\"Transactions\".\"latitude\" DOUBLE, "
 						+ "\"Transactions\".\"longitude\" DOUBLE, "
-						+ "\"Transactions\".\"ipAddress\" VARCHAR, "
 						+ "\"Transactions\".\"transactionId\" VARCHAR, "
 						+ "\"Transactions\".\"transactionTimeStamp\" BIGINT, "
 						+ "\"Transactions\".\"distanceFromHome\" DOUBlE, "
 						+ "\"Transactions\".\"distanceFromPrev\" DOUBLE)");
 				conn.commit();
-				conn.close();
 				
-				transactionHistoryTable = new HTable(config, "TransactionHistory");
-				/*
+				/* transactionHistoryTable = new HTable(config, "TransactionHistory");
 				HTableDescriptor tableDescriptor = new HTableDescriptor("TransactionHistory");
 				HColumnDescriptor cfColumnFamily = new HColumnDescriptor("Transactions".getBytes());
 		        tableDescriptor.addFamily(cfColumnFamily);
 		        hbaseAdmin.createTable(tableDescriptor);
 		        transactionHistoryTable = new HTable(config, "TransactionHistory"); */
-			}
+			//}
 			
 			if (hbaseAdmin.tableExists("CustomerAccount")) {
 				customerAccountTable = new HTable(config, "CustomerAccount");
@@ -279,8 +300,6 @@ public class FraudDetector extends BaseRichBolt {
 			}
 			hbaseAdmin.close();
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
