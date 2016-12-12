@@ -123,7 +123,7 @@ public class FraudDetector extends BaseRichBolt {
 	@SuppressWarnings("deprecation")
 	public void persistTransactionToHbase(EnrichedTransaction transaction){
 		
-		String currentTransaction = "UPSERT INTO \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, "
+		String currentTransaction = "UPSERT INTO \"TransactionHistory\" (\"Transactions\".PK , "
 						+ "\"Transactions\".\"accountNumber\", "
 						+ "\"Transactions\".\"accountType\", "
 						+ "\"Transactions\".\"merchantId\", "
