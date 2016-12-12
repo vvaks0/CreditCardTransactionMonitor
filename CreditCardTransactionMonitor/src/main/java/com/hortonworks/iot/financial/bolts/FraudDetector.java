@@ -256,9 +256,9 @@ public class FraudDetector extends BaseRichBolt {
 	    // Instantiating HTable
 		try {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
-			//if (hbaseAdmin.tableExists("TransactionHistory")) {
-			//	transactionHistoryTable = new HTable(config, "TransactionHistory");
-			//}else{
+			if (hbaseAdmin.tableExists("TransactionHistory")) {
+				transactionHistoryTable = new HTable(config, "TransactionHistory");
+			}else{
 				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
 				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
 				conn.createStatement().executeUpdate("create table if not exists \"TransactionHistory\" "
@@ -286,7 +286,7 @@ public class FraudDetector extends BaseRichBolt {
 		        tableDescriptor.addFamily(cfColumnFamily);
 		        hbaseAdmin.createTable(tableDescriptor);
 		        transactionHistoryTable = new HTable(config, "TransactionHistory"); */
-			//}
+			}
 			
 			if (hbaseAdmin.tableExists("CustomerAccount")) {
 				customerAccountTable = new HTable(config, "CustomerAccount");
