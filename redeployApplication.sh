@@ -44,11 +44,11 @@ PAYLOAD=$(echo "{\"id\":\"$REPORTING_TASK_ID\",\"revision\":{\"version\":1},\"co
 }
 
 recreateTransactionHistoryTable () {
-	HQL="DROP TABLE TransactionHistory;"
+	#HQL="DROP TABLE TransactionHistory;"
 	# CREATE Customer Transaction History Table
-	beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
+	#beeline -u jdbc:hive2://$HIVESERVER_HOST:$HIVESERVER_PORT/default -d org.apache.hive.jdbc.HiveDriver -e "$HQL" -n hive
 	
-	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
+	HQL="CREATE TABLE IF NOT EXISTS transaction_history_$CLUSTER_NAME ( accountNumber String,
                                                     fraudulent String,
                                                     merchantId String,
                                                     merchantType String,

@@ -428,7 +428,7 @@ configureHiveACID () {
 
 createTransactionHistoryTable () {
 	HIVESERVER_HOST=$(getHiveServerHost)
-	HQL="CREATE TABLE IF NOT EXISTS TransactionHistory ( accountNumber String,
+	HQL="CREATE TABLE IF NOT EXISTS transaction_history_$CLUSTER_NAME ( accountNumber String,
                                                     fraudulent String,
                                                     merchantId String,
                                                     merchantType String,
