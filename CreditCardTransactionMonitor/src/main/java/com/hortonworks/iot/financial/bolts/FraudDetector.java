@@ -123,22 +123,39 @@ public class FraudDetector extends BaseRichBolt {
 	@SuppressWarnings("deprecation")
 	public void persistTransactionToHbase(EnrichedTransaction transaction){
 		
-		String currentTransaction = "UPSERT INTO \"TransactionHistory\" VALUES('"+ transaction.getTransactionId()+"','"+
-																				   transaction.getAccountNumber()+"','"+
-																				   transaction.getAccountType()+"','"+
-																				   transaction.getMerchantId()+"','"+
-																				   transaction.getMerchantType()+"','"+
-																				   transaction.getFraudulent()+"',"+
-																				   transaction.getAmount()+",'"+
-																				   transaction.getCurrency()+"','_"+
-																				   transaction.getIpAddress()+"_','" +
-																				   transaction.getIsCardPresent()+"'," +
-																				   transaction.getLatitude()+"," +
-																				   transaction.getLongitude()+",'"+
-																				   transaction.getTransactionId()+"',"+
-																				   transaction.getTransactionTimeStamp()+","+
-																				   transaction.getDistanceFromHome()+","+
-																				   transaction.getDistanceFromPrev()+")";
+		String currentTransaction = "UPSERT INTO \"TransactionHistory\" (pk VARCHAR PRIMARY KEY, "
+						+ "\"Transactions\".\"accountNumber\", "
+						+ "\"Transactions\".\"accountType\", "
+						+ "\"Transactions\".\"merchantId\", "
+						+ "\"Transactions\".\"merchantType\", "
+						+ "\"Transactions\".\"frauduent\", "
+						+ "\"Transactions\".\"amount\", "
+						+ "\"Transactions\".\"currency\", "
+						+ "\"Transactions\".\"ipAddress\", "
+						+ "\"Transactions\".\"isCardPresent\", "
+						+ "\"Transactions\".\"latitude\", "
+						+ "\"Transactions\".\"longitude\", "
+						+ "\"Transactions\".\"transactionId\", "
+						+ "\"Transactions\".\"transactionTimeStamp\", "
+						+ "\"Transactions\".\"distanceFromHome\", "
+						+ "\"Transactions\".\"distanceFromPrev\" "
+						+ " VALUES('"+ transaction.getTransactionId()+"','"
+						+ transaction.getAccountNumber()+"','"
+						+ transaction.getAccountType()+"','"
+						+ transaction.getMerchantId()+"','"
+						+ transaction.getMerchantType()+"','"
+						+ transaction.getFraudulent()+"',"
+						+ transaction.getAmount()+",'"
+						+ transaction.getCurrency()+"','_"
+						+ transaction.getIpAddress()+"_','" 
+						+ transaction.getIsCardPresent()+"',"
+						+ transaction.getLatitude()+","
+						+ transaction.getLongitude()+",'"
+						+ transaction.getTransactionId()+"',"
+						+ transaction.getTransactionTimeStamp()+","
+						+ transaction.getDistanceFromHome()+","
+						+ transaction.getDistanceFromPrev()+")";
+		
 		System.out.println("*************** UPSERT STATEMENT: " + currentTransaction);
 		try {
 			conn.createStatement().executeUpdate(currentTransaction);
