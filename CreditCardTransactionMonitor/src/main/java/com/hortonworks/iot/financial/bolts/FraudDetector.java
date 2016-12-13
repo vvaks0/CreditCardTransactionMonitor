@@ -91,11 +91,11 @@ public class FraudDetector extends BaseRichBolt {
 		
 		Model model = new Model(svm);
 		transaction = model.calculateFraudScore(transaction, previousTransaction);
-		if(previousTransaction == null){
-			transaction.setDistanceFromPrev(0.0);;
-		}
 		System.out.println("**********************Probability Transaction is Fraudulent: " + transaction.getScore());
 		
+		if(Double.isNaN(transaction.getDistanceFromPrev())){
+			transaction.setDistanceFromPrev(0.0);
+		}
 		if(transaction.getScore() < 50){
 			transaction.setFraudulent("false");
 			persistTransactionToHbase(transaction);
