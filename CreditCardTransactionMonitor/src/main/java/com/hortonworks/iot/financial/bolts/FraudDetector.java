@@ -203,8 +203,8 @@ public class FraudDetector extends BaseRichBolt {
 		try {
 			String maxTransactionSQL = "SELECT MAX(\"transactionTimeStamp\") FROM \"TransactionHistory\"";
 			resultSet = conn.createStatement().executeQuery(maxTransactionSQL);
-			resultSet.next();
-			String lastTransactionSQL = "SELECT PK, "
+			if(resultSet.next()){
+				String lastTransactionSQL = "SELECT PK, "
 					+ "\"accountNumber\","
 					+ "\"accountType\","
 					+ "\"frauduent\","
@@ -221,22 +221,23 @@ public class FraudDetector extends BaseRichBolt {
 					+ "\"distanceFromPrev\" "
 					+ " FROM \"TransactionHistory\" "
 					+ " WHERE \"transactionTimeStamp\" = " + resultSet.getLong(0);
-			resultSet = conn.createStatement().executeQuery(lastTransactionSQL);
-			resultSet.next();
-			lastTransaction.setAccountNumber(resultSet.getString("accountNumber"));
-			lastTransaction.setAccountType(resultSet.getString("accountType"));
-			lastTransaction.setFraudulent(resultSet.getString("frauduent"));
-			lastTransaction.setMerchantId(resultSet.getString("merchantId"));
-			lastTransaction.setMerchantType(resultSet.getString("merchantType"));
-			lastTransaction.setAmount(resultSet.getString("amount"));
-			lastTransaction.setCurrency(resultSet.getString("currency"));
-			lastTransaction.setIsCardPresent(resultSet.getString("isCardPresent"));
-			lastTransaction.setLatitude(resultSet.getString("latitude"));
-			lastTransaction.setLongitude(resultSet.getString("longitude"));
-			lastTransaction.setTransactionId(resultSet.getString("transactionId"));
-			lastTransaction.setTransactionTimeStamp(resultSet.getString("transactionTimeStamp"));
-			lastTransaction.setDistanceFromHome(resultSet.getDouble("distanceFromHome"));
-			lastTransaction.setDistanceFromPrev(resultSet.getDouble("distanceFromPrev"));
+				resultSet = conn.createStatement().executeQuery(lastTransactionSQL);
+				resultSet.next();
+				lastTransaction.setAccountNumber(resultSet.getString("accountNumber"));
+				lastTransaction.setAccountType(resultSet.getString("accountType"));
+				lastTransaction.setFraudulent(resultSet.getString("frauduent"));
+				lastTransaction.setMerchantId(resultSet.getString("merchantId"));
+				lastTransaction.setMerchantType(resultSet.getString("merchantType"));
+				lastTransaction.setAmount(resultSet.getString("amount"));
+				lastTransaction.setCurrency(resultSet.getString("currency"));
+				lastTransaction.setIsCardPresent(resultSet.getString("isCardPresent"));
+				lastTransaction.setLatitude(resultSet.getString("latitude"));
+				lastTransaction.setLongitude(resultSet.getString("longitude"));
+				lastTransaction.setTransactionId(resultSet.getString("transactionId"));
+				lastTransaction.setTransactionTimeStamp(resultSet.getString("transactionTimeStamp"));
+				lastTransaction.setDistanceFromHome(resultSet.getDouble("distanceFromHome"));
+				lastTransaction.setDistanceFromPrev(resultSet.getDouble("distanceFromPrev"));
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
