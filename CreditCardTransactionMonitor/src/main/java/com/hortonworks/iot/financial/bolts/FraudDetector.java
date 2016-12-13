@@ -66,9 +66,7 @@ public class FraudDetector extends BaseRichBolt {
 	private String componentType;
 	private Constants constants;
 	private Connection conn = null;
-	
-	//private SparkContext sc;
-	
+
 	public void execute(Tuple tuple)  {
 		EnrichedTransaction transaction = (EnrichedTransaction) tuple.getValueByField("EnrichedTransaction");
 		EnrichedTransaction previousTransaction = null;
@@ -200,7 +198,49 @@ public class FraudDetector extends BaseRichBolt {
 		lastTransaction.setAccountNumber(accountNumber);
 		lastTransaction.setLatitude("0.0");
 		lastTransaction.setLongitude("0.0");
+		String maxTransactionSQL = "SELECT MAX(\"transactionTimeStamp\") FROM \"TransactionHistory\"";
 		
+		ResultSet resultSet;
+		try {
+			resultSet = conn.createStatement().executeQuery(maxTransactionSQL);
+			resultSet.first();
+			String lastTransactionSQL = "SELECT PK, "
+					+ "\"accountNumber\","
+					+ "\"accountType\","
+					+ "\"frauduent\","
+					+ "\"merchantId\","
+					+ "\"merchantType\","
+					+ "\"amount\","
+					+ "\"currency\","
+					+ "\"isCardPresent\","
+					+ "\"latitude\","
+					+ "\"longitude\","
+					+ "\"transactionId\","
+					+ "\"transactionTimeStamp\","
+					+ "\"distanceFromHome\","
+					+ "\"distanceFromPrev\" "
+					+ " FROM \"TransactionHistory\" "
+					+ " WHERE \"transactionTimeStamp\" = " + resultSet.getLong(0);
+			resultSet = conn.createStatement().executeQuery(lastTransactionSQL);
+			resultSet.first();
+			lastTransaction.setAccountNumber(resultSet.getString("accountNumber"));
+			lastTransaction.setAccountType(resultSet.getString("accountType"));
+			lastTransaction.setFraudulent(resultSet.getString("frauduent"));
+			lastTransaction.setMerchantId(resultSet.getString("merchantId"));
+			lastTransaction.setMerchantType(resultSet.getString("merchantType"));
+			lastTransaction.setAmount(resultSet.getString("amount"));
+			lastTransaction.setCurrency(resultSet.getString("currency"));
+			lastTransaction.setIsCardPresent(resultSet.getString("isCardPresent"));
+			lastTransaction.setLatitude(resultSet.getString("latitude"));
+			lastTransaction.setLongitude(resultSet.getString("longitude"));
+			lastTransaction.setTransactionId(resultSet.getString("transactionId"));
+			lastTransaction.setTransactionTimeStamp(resultSet.getString("transactionTimeStamp"));
+			lastTransaction.setDistanceFromHome(resultSet.getDouble("distanceFromHome"));
+			lastTransaction.setDistanceFromPrev(resultSet.getDouble("distanceFromPrev"));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		/*
 		Scan scan = new Scan();
 		scan.addColumn(Bytes.toBytes("Transactions"),Bytes.toBytes("transactionId"));
 	    scan.addColumn(Bytes.toBytes("Transactions"),Bytes.toBytes("latitude"));
@@ -236,7 +276,7 @@ public class FraudDetector extends BaseRichBolt {
     			lastTransaction.setTransactionTimeStamp(currentTransaction.getTransactionTimeStamp());
     			System.out.println("*************** Wrote Current to Existing : Current: " + currentTransaction.getTransactionId() + " : Existing: " + lastTransaction.getTransactionId());
     		}
-	    }
+	    }*/
 	    System.out.println("*************** Last Transaction: " + lastTransaction.getTransactionId());
 		return lastTransaction;
 	}
