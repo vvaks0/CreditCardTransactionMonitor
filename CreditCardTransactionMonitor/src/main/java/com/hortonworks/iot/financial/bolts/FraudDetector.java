@@ -83,9 +83,6 @@ public class FraudDetector extends BaseRichBolt {
 		
 		try {
 			previousTransaction = getLastTransaction(transaction.getAccountNumber());
-			if(previousTransaction == null){
-				previousTransaction = transaction;
-			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -94,6 +91,9 @@ public class FraudDetector extends BaseRichBolt {
 		
 		Model model = new Model(svm);
 		transaction = model.calculateFraudScore(transaction, previousTransaction);
+		if(previousTransaction == null){
+			transaction.setDistanceFromPrev(0.0);;
+		}
 		System.out.println("**********************Probability Transaction is Fraudulent: " + transaction.getScore());
 		
 		if(transaction.getScore() < 50){
