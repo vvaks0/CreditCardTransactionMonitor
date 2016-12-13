@@ -82,7 +82,10 @@ public class FraudDetector extends BaseRichBolt {
 	    stormProvenance.add(provenanceEvent);
 		
 		try {
-			previousTransaction = getLastTransaction(transaction.getAccountNumber()); 
+			previousTransaction = getLastTransaction(transaction.getAccountNumber());
+			if(previousTransaction == null){
+				previousTransaction = transaction;
+			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
