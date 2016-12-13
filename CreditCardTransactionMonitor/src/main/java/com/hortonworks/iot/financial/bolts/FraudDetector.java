@@ -203,7 +203,7 @@ public class FraudDetector extends BaseRichBolt {
 		try {
 			String maxTransactionSQL = "SELECT MAX(\"transactionTimeStamp\") FROM \"TransactionHistory\"";
 			resultSet = conn.createStatement().executeQuery(maxTransactionSQL);
-			resultSet.first();
+			resultSet.next();
 			String lastTransactionSQL = "SELECT PK, "
 					+ "\"accountNumber\","
 					+ "\"accountType\","
@@ -222,7 +222,7 @@ public class FraudDetector extends BaseRichBolt {
 					+ " FROM \"TransactionHistory\" "
 					+ " WHERE \"transactionTimeStamp\" = " + resultSet.getLong(0);
 			resultSet = conn.createStatement().executeQuery(lastTransactionSQL);
-			resultSet.first();
+			resultSet.next();
 			lastTransaction.setAccountNumber(resultSet.getString("accountNumber"));
 			lastTransaction.setAccountType(resultSet.getString("accountType"));
 			lastTransaction.setFraudulent(resultSet.getString("frauduent"));
