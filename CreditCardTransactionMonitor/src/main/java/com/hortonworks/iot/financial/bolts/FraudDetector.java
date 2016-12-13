@@ -88,7 +88,7 @@ public class FraudDetector extends BaseRichBolt {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+		if(previousTransaction == null){ previousTransaction = transaction;}
 		Model model = new Model(svm);
 		transaction = model.calculateFraudScore(transaction, previousTransaction);
 		System.out.println("**********************Probability Transaction is Fraudulent: " + transaction.getScore());
