@@ -55,6 +55,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    private String cometdListenPort = "8091";
 		private String defaultAccountNumber = "19123";
 		private String mapAPIKey = "NO_API_KEY_FOUND";
+		private Connection conn;
 	    
 	    @SuppressWarnings("deprecation")
 		public void init(ServletConfig config) throws ServletException {
@@ -109,8 +110,15 @@ public class TransactionMonitorUI extends HttpServlet{
 			hbaseConfig.set("zookeeper.znode.parent", zkHBasePath);
 			
 			try {
-				customerAccountTable = new HTable(hbaseConfig, "CustomerAccount");
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn =  DriverManager.getConnection("jdbc:phoenix:" + zkHost + ":" + zkPort + ":" + zkHBasePath);
+		        System.out.println("got connection");
+		        customerAccountTable = new HTable(hbaseConfig, "CustomerAccount");
 				transactionHistoryTable = new HTable(hbaseConfig, "TransactionHistory");
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -198,33 +206,52 @@ public class TransactionMonitorUI extends HttpServlet{
 	    }
 	    private Transaction getTransaction(String transactionId) {
 	    	Transaction transaction = new Transaction();
-
-	    	Get getTransaction = new Get(Bytes.toBytes(transactionId));
-		    Result result = null;
+	    	List<Transaction> transactionList = new ArrayList<Transaction>();
+	    	String transactionQueryString = "SELECT PK, "
+					+ "\"accountNumber\","
+					+ "\"accountType\","
+					+ "\"frauduent\","
+					+ "\"merchantId\","
+					+ "\"merchantType\","
+					+ "\"amount\","
+					+ "\"currency\","
+					+ "\"isCardPresent\","
+					+ "\"latitude\","
+					+ "\"longitude\","
+					+ "\"transactionId\","
+					+ "\"transactionTimeStamp\","
+					+ "\"distanceFromHome\","
+					+ "\"distanceFromPrev\" "
+					+ " FROM \"TransactionHistory\" "
+					+ " WHERE \"transactionId\" = \"" + transactionId + "\"";
+	    	ResultSet rst;
 			try {
-				result = transactionHistoryTable.get(getTransaction);
-			} catch (IOException e) {
+				rst = conn.createStatement().executeQuery(transactionQueryString);
+				while (rst.next()) {
+					transaction = new Transaction();
+					transaction.setAccountNumber(rst.getString("accountType"));
+					transaction.setAccountType(rst.getString("accountType"));
+					transaction.setMerchantId(rst.getString("merchantId"));
+					transaction.setMerchantType(rst.getString("merchantType"));
+					transaction.setFraudulent(rst.getString("frauduent"));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
+					transaction.setCurrency(rst.getString("currency"));
+					transaction.setIsCardPresent(rst.getString("isCardPresent"));
+					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
+					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
+					transaction.setIpAddress(rst.getString("ipAddress"));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setTransactionTimeStamp(String.valueOf(rst.getLong("transactionTimeStamp")));
+					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
+					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
+							
+					transactionList.add(transaction);
+				}
+			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-			
-			if(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("accountNumber")) !=null){
-				transaction.setAccountNumber(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("accountNumber"))));
-				transaction.setAccountType(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("acountType"))));
-				transaction.setMerchantId(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("merchantId"))));
-				transaction.setMerchantType(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("merchantType"))));
-				transaction.setTransactionId(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("transactionId"))));
-				transaction.setAmount(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("amount"))));
-				transaction.setCurrency(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("currency"))));
-				transaction.setIsCardPresent(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("isCardPresent"))));
-				transaction.setLatitude(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("latitude"))));
-				transaction.setLongitude(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("longitude"))));
-				transaction.setIpAddress(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("ipAddress"))));
-				transaction.setTransactionTimeStamp(Bytes.toString(result.getValue(Bytes.toBytes("Transactions"),Bytes.toBytes("transactionTimeStampe"))));				
-			}
-			else{
-				System.out.println("The target transaction could not be found.");
-			}
-	    	return transaction;
+	    	return transactionList.get(0);
 		}
 	    
 	    @SuppressWarnings("deprecation")
@@ -290,7 +317,49 @@ public class TransactionMonitorUI extends HttpServlet{
 	    
 	    public AccountDetails getAccountDetails(String accountNumber) throws IOException{
 	    	AccountDetails accountDetails = new AccountDetails();
-
+	    	/*
+	    	ResultSet rst;
+			try {
+				rst = conn.createStatement().executeQuery("SELECT \"merchantType\", COUNT(\"merchantType\") as \"Count\" FROM \"TransactionHistory\" WHERE \"frauduent\" = 'false' GROUP BY \"merchantType\"");
+				while (rst.next()) {
+					accountDetails.setAccountNumber(rst.getString("accountNumber"));
+					accountDetails.setAccountType(rst.getString("accountType"));
+					accountDetails.setIsAccountActive(rst.getString("isActive"));
+					accountDetails.setFirstName(rst.getString("firstName"));
+					accountDetails.setLastName(rst.getString("lastName"));
+					accountDetails.setAge(rst.getString("age"));
+					accountDetails.setGender(rst.getString("gender"));
+					accountDetails.setStreetAddress(rst.getString("streetAddress"));
+					accountDetails.setCity(rst.getString("city"));
+					accountDetails.setState(rst.getString("state"));
+					accountDetails.setZipCode(rst.getString("zipcode"));
+					accountDetails.setHomeLatitude(rst.getString("latitude"));
+					accountDetails.setHomeLongitude(rst.getString("longitude"));
+					accountDetails.setConAmountDev(rst.getDouble("conAmtDev"));
+					accountDetails.setConAmountMean(rst.getDouble("conAmtMean"));
+					accountDetails.setDistanceDev(rst.getDouble("distanceDev"));
+					accountDetails.setDistanceMean(rst.getDouble("distanceMean"));
+					accountDetails.setElecAmountDev(rst.getDouble("elecAmtDev"));
+					accountDetails.setElecAmountMean(rst.getDouble("elecAmtMean"));
+					accountDetails.setEntAmountDev(rst.getDouble("entAmtDev"));
+					accountDetails.setEntAmountMean(rst.getDouble("entAmtMean"));
+					accountDetails.setGasAmountDev(rst.getDouble("gasAmtDev"));
+					accountDetails.setGasAmountMean(rst.getDouble("gasAmtMean"));
+					accountDetails.setGrocAmountDev(rst.getDouble("grocAmtDev"));
+					accountDetails.setGrocAmountMean(rst.getDouble("grocAmtMean"));
+					accountDetails.setHbAmountDev(rst.getDouble("hbAmtDev"));
+					accountDetails.setHbAmountMean(rst.getDouble("hbAmtMean"));
+					accountDetails.setRetAmountDev(rst.getDouble("rAmtDev"));
+					accountDetails.setRetAmountMean(rst.getDouble("rAmtMean"));
+					accountDetails.setRestAmtDev(rst.getDouble("restAmtDev"));
+					accountDetails.setRestAmtMean(rst.getDouble("restAmtMean"));
+					accountDetails.setTimeDeltaSecDev(rst.getDouble("timeDeltaSecDev"));
+					accountDetails.setTimeDetlaSecMean(rst.getDouble("timeDeltaSecMean"));
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}*/
+	    	
 	    	Get getAccountDetails = new Get(Bytes.toBytes(accountNumber));
 		    Result result = null;
 			try {
@@ -339,80 +408,57 @@ public class TransactionMonitorUI extends HttpServlet{
 	    	return accountDetails;
 	    }
 	    
-	    @SuppressWarnings("deprecation")
 		public List<Transaction> getTransactionHistory() throws IOException{
 	    	Transaction transaction = null;
 	    	List<Transaction> transactionList = new ArrayList<Transaction>();
-	    	System.out.println("Getting Transaction History");
-	    	System.out.println("Building Scanner...");
-	    	Scan scan = new Scan();
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("accountNumber"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("acountType"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantId"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("merchantType"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("amount"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("currency"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("isCardPresent"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("latitude"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("longitude"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("ipAddress"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionId"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("transactionTimeStamp"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromHome"));
-		    scan.addColumn(Bytes.toBytes("Transactions"), Bytes.toBytes("distanceFromPrev"));
-
-		    System.out.println("Getting Scanner...");
-		    ResultScanner scanner = transactionHistoryTable.getScanner(scan);
-		    System.out.println("Iterate through scan results");
-		    for (Result result = scanner.next(); (result != null); result = scanner.next()) {
-		    	transaction = new Transaction();
-		    	for(KeyValue keyValue : result.list()) {
-	    			System.out.println("Qualifier : " + Bytes.toString(keyValue.getQualifier()) + " : Value : " + Bytes.toString(keyValue.getValue()));
-	    			if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("accountNumber")){
-	    				transaction.setAccountNumber(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("accountType")){
-	    				transaction.setAccountType(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("merchantId")){
-	    				transaction.setMerchantId(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("merchantType")){
-	    				transaction.setMerchantType(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("frauduent")){
-	    				transaction.setFraudulent(Bytes.toString(keyValue.getValue()));
-		    		} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("transactionId")){
-		    			transaction.setTransactionId(Bytes.toString(keyValue.getValue()));
-		    		} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("amount")){
-	    				transaction.setAmount(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("currency")){
-	    				transaction.setCurrency(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("isCardPresent")){
-	    				transaction.setIsCardPresent(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("latitude")){
-	    				transaction.setLatitude(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("longitude")){
-	    				transaction.setLongitude(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("ipAddress")){
-	    				transaction.setIpAddress(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("transactionId")){
-	    				transaction.setTransactionId(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("transactionTimeStamp")){
-	    				transaction.setTransactionTimeStamp(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("distanceFromHome")){
-	    				transaction.setDistanceFromHome(Bytes.toString(keyValue.getValue()));
-	    			} else if(Bytes.toString(keyValue.getQualifier()).equalsIgnoreCase("distanceFromPrev")){
-	    				transaction.setDistanceFromPrev(Bytes.toString(keyValue.getValue()));
-	    			}	
-		    	}
-		    	transactionList.add(transaction);
-		    }	
+	    	String transactionQueryString = "SELECT PK, "
+					+ "\"accountNumber\","
+					+ "\"accountType\","
+					+ "\"frauduent\","
+					+ "\"merchantId\","
+					+ "\"merchantType\","
+					+ "\"amount\","
+					+ "\"currency\","
+					+ "\"isCardPresent\","
+					+ "\"latitude\","
+					+ "\"longitude\","
+					+ "\"transactionId\","
+					+ "\"transactionTimeStamp\","
+					+ "\"distanceFromHome\","
+					+ "\"distanceFromPrev\" "
+					+ " FROM \"TransactionHistory\" ";
+		    ResultSet rst;
+			try {
+				rst = conn.createStatement().executeQuery(transactionQueryString);
+				while (rst.next()) {
+					transaction = new Transaction();
+					transaction.setAccountNumber(rst.getString("accountType"));
+					transaction.setAccountType(rst.getString("accountType"));
+					transaction.setMerchantId(rst.getString("merchantId"));
+					transaction.setMerchantType(rst.getString("merchantType"));
+					transaction.setFraudulent(rst.getString("frauduent"));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
+					transaction.setCurrency(rst.getString("currency"));
+					transaction.setIsCardPresent(rst.getString("isCardPresent"));
+					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
+					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
+					transaction.setIpAddress(rst.getString("ipAddress"));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setTransactionTimeStamp(String.valueOf(rst.getLong("transactionTimeStamp")));
+					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
+					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
+						
+					transactionList.add(transaction);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		    	
 		    return transactionList;
 	    }
 	    public Map<String, Integer> getMerchantTypeShare() throws ClassNotFoundException, SQLException{
 	    	Map<String, Integer> merchantTypeShare = new HashMap<String, Integer>();
-	    	Connection conn;
-	        Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-	        conn =  DriverManager.getConnection("jdbc:phoenix:" + zkHost + ":" + zkPort + ":" + zkHBasePath);
-	        System.out.println("got connection");
 	        ResultSet rst = conn.createStatement().executeQuery("SELECT \"merchantType\", COUNT(\"merchantType\") as \"Count\" FROM \"TransactionHistory\" WHERE \"frauduent\" = 'false' GROUP BY \"merchantType\"");
 	        while (rst.next()) {
 	        	merchantTypeShare.put(rst.getString(1), rst.getInt(2));
