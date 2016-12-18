@@ -445,7 +445,7 @@ public class TransactionMonitorUI extends HttpServlet{
 					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
 					transaction.setIpAddress(rst.getString("ipAddress"));
 					transaction.setTransactionId(rst.getString("transactionId"));
-					transaction.setTransactionTimeStamp(String.valueOf(rst.getLong("transactionTimeStamp")));
+					transaction.setTransactionTimeStamp(rst.getString("transactionTimeStamp"));
 					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
 					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
 						
