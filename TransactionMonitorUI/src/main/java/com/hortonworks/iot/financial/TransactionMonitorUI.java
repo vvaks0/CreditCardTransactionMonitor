@@ -411,7 +411,7 @@ public class TransactionMonitorUI extends HttpServlet{
 		public List<Transaction> getTransactionHistory() throws IOException{
 	    	Transaction transaction = null;
 	    	List<Transaction> transactionList = new ArrayList<Transaction>();
-	    	String transactionQueryString = "SELECT PK, "
+	    	String transactionQueryString = "SELECT "
 					+ "\"accountNumber\","
 					+ "\"accountType\","
 					+ "\"frauduent\","
