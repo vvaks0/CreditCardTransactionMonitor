@@ -443,7 +443,7 @@ public class TransactionMonitorUI extends HttpServlet{
 					transaction.setIsCardPresent(rst.getString("isCardPresent"));
 					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
 					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
-					transaction.setIpAddress(rst.getString("ipAddress"));
+					//transaction.setIpAddress(rst.getString("ipAddress"));
 					transaction.setTransactionId(rst.getString("transactionId"));
 					transaction.setTransactionTimeStamp(rst.getString("transactionTimeStamp"));
 					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
