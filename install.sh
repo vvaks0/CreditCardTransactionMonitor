@@ -740,9 +740,9 @@ docker pull vvaks/cometd
 
 echo "*********************************Checking Yarn and Phoenix Configurations..."
 configureYarnMemory
-enablePhoenix
-stopService HBASE
-startService HBASE
+#enablePhoenix
+#stopService HBASE
+#startService HBASE
 echo "*********************************Checking Hive Configurations..."
 echo " 				  *****************Set Hive Scratch Folder..."
 mkdir /tmp/hive
@@ -752,9 +752,9 @@ hadoop fs -mkdir /tmp/hive/
 hadoop fs -chmod 777 /tmp/
 hadoop fs -chmod 777 /tmp/hive/
 hadoop fs -chown hive:hdfs /tmp/hive/
-configureHiveACID
-stopService HIVE
-startService HIVE
+#configureHiveACID
+#stopService HIVE
+#startService HIVE
 #Create Transaction History Hive Table for Storm topology
 echo "*********************************Creating TransactionHistory Hive Table..."
 createTransactionHistoryTable
