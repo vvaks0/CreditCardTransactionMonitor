@@ -400,6 +400,29 @@ enablePhoenix () {
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.rpc.controllerfactory.class org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory
 }
 
+enableSparkLLAP () {
+	echo "*********************************Installing Spark-LLAP Binaries..."
+	wget -P /usr/hdp/current/spark-client/lib/ http://repo.hortonworks.com/content/repositories/releases/com/hortonworks/spark-llap/1.0.0.2.5.3.0-37/spark-llap-1.0.0.2.5.3.0-37-assembly.jar
+	echo "*********************************Configuring Spark-LLAP..."
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE:10500"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.jars "/usr/hdp/current/spark-client/lib/spark-llap-1.0.0.2.5.3.0-37-assembly.jar"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.hadoop.hive.zookeeper.quorum "$ZK_HOST:2181"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.hadoop.hive.llap.daemon.service.hosts "@llap0"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE:10500"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.jars "/usr/hdp/current/spark-client/lib/spark-llap-1.0.0.2.5.3.0-37-assembly.jar"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.hadoop.hive.zookeeper.quorum "$ZK_HOST:2181"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.hadoop.hive.llap.daemon.service.hosts "@llap0"
+	sleep 1
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-env spark_thrift_cmd_opts "--jars /usr/hdp/current/spark-client/lib/spark-llap-1.0.0.2.5.3.0-37-assembly.jar"
+}
+
 configureYarnMemory () {
 	YARN_MEM_MAX=$(/var/lib/ambari-server/resources/scripts/configs.sh get $AMBARI_HOST $CLUSTER_NAME yarn-site | grep '"yarn.scheduler.maximum-allocation-mb"'|grep -Po ': "([0-9]+)'|grep -Po '([0-9]+)')
 	echo "*********************************yarn.scheduler.maximum-allocation-mb is set to $YARN_MEM_MAX MB"
@@ -462,6 +485,12 @@ getHiveServerHost () {
         echo $HIVESERVER_HOST
 }
 
+getHiveInteractiveServerHost () {
+        HIVESERVER_INTERACTIVE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_SERVER_INTERACTIVE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
+
+        echo $HIVESERVER_INTERACTIVE_HOST
+}
+
 getHiveMetaStoreHost () {
         HIVE_METASTORE_HOST=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/HIVE/components/HIVE_METASTORE|grep "host_name"|grep -Po ': "([a-zA-Z0-9\-_!?.]+)'|grep -Po '([a-zA-Z0-9\-_!?.]+)')
 
@@ -491,6 +520,8 @@ NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
 HIVESERVER_HOST=$(getHiveServerHost)
 export HIVESERVER_HOST=$HIVESERVER_HOST
+HIVESERVER_INTERACTIVE_HOST=$(getHiveInteractiveServerHost)
+export HIVESERVER_INTERACTIVE_HOST=$HIVESERVER_INTERACTIVE_HOST
 HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
 export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
 HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
@@ -743,6 +774,12 @@ configureYarnMemory
 #enablePhoenix
 #stopService HBASE
 #startService HBASE
+
+echo "*********************************Checking Spark Configurations..."
+enableSparkLLAP
+stopService SPARK
+startService SPARK
+
 echo "*********************************Checking Hive Configurations..."
 echo " 				  *****************Set Hive Scratch Folder..."
 mkdir /tmp/hive

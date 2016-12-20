@@ -79,12 +79,12 @@ recreateTransactionHistoryTable () {
 echo "*********************************Recreating TransactionHistory Table..."
 recreateTransactionHistoryTable
 
-cd /root/Utils/SparkPhoenixETL
-rm -Rvf classes*
-mvn clean package
-mv target/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar /home/spark
+#cd /root/Utils/SparkPhoenixETL
+#rm -Rvf classes*
+#mvn clean package
+#mv target/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar /home/spark
 
-spark-submit --class com.hortonworks.util.SparkPhoenixETL --master yarn-client --executor-cores 2 --driver-memory 2G --executor-memory 2G --num-executors 1 /home/spark/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar $ZK_HOST:2181:/hbase-unsecure $CLUSTER_NAME CreditFraud
+#spark-submit --class com.hortonworks.util.SparkPhoenixETL --master yarn-client --executor-cores 2 --driver-memory 2G --executor-memory 2G --num-executors 1 /home/spark/SparkPhoenixETL-0.0.1-SNAPSHOT-jar-with-dependencies.jar $ZK_HOST:2181:/hbase-unsecure $CLUSTER_NAME CreditFraud
 
 # Redeploy Storm Topology to send topology meta data to Atlas
 echo "*********************************Redeploying Storm Topology..."
