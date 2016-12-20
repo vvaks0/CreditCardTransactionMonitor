@@ -404,7 +404,7 @@ enableSparkLLAP () {
 	echo "*********************************Installing Spark-LLAP Binaries..."
 	wget -P /usr/hdp/current/spark-client/lib/ http://repo.hortonworks.com/content/repositories/releases/com/hortonworks/spark-llap/1.0.0.2.5.3.0-37/spark-llap-1.0.0.2.5.3.0-37-assembly.jar
 	echo "*********************************Configuring Spark-LLAP..."
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE:10500"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE_HOST:10500"
 	sleep 1
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.jars "/usr/hdp/current/spark-client/lib/spark-llap-1.0.0.2.5.3.0-37-assembly.jar"
 	sleep 1
@@ -412,7 +412,7 @@ enableSparkLLAP () {
 	sleep 1
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-defaults spark.hadoop.hive.llap.daemon.service.hosts "@llap0"
 	sleep 1
-	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE:10500"
+	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.sql.hive.hiveserver2.url "jdbc:hive2://$HIVESERVER_INTERACTIVE_HOST:10500"
 	sleep 1
 	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME spark-thrift-sparkconf spark.jars "/usr/hdp/current/spark-client/lib/spark-llap-1.0.0.2.5.3.0-37-assembly.jar"
 	sleep 1

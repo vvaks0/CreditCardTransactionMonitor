@@ -102,6 +102,8 @@ echo "export NIFI_HOST=$NIFI_HOST" >> ~/.bash_profile
 env
 
 #yum install -y phoenix
+echo "*********************************Installing Spark-LLAP Binaries..."
+	wget -P /usr/hdp/current/spark-client/lib/ http://repo.hortonworks.com/content/repositories/releases/com/hortonworks/spark-llap/1.0.0.2.5.3.0-37/spark-llap-1.0.0.2.5.3.0-37-assembly.jar
 
 echo "*********************************Set Hive Scratch Folder..."
 mkdir /tmp/hive
