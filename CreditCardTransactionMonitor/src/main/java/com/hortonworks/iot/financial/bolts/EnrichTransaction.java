@@ -1,6 +1,9 @@
 package com.hortonworks.iot.financial.bolts;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +53,7 @@ public class EnrichTransaction extends BaseRichBolt {
 	private OutputCollector collector;
 	private Constants constants;
 	private HTable customerAccountTable = null;
+	private Connection conn;
 	
 	public void execute(Tuple tuple) {
 		IncomingTransaction incomingTransaction = (IncomingTransaction) tuple.getValueByField("IncomingTransaction");
@@ -171,7 +175,90 @@ public class EnrichTransaction extends BaseRichBolt {
 			HBaseAdmin hbaseAdmin = new HBaseAdmin(config);
 			if (hbaseAdmin.tableExists("CustomerAccount")) {
 				customerAccountTable = new HTable(config, "CustomerAccount");
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
 			}else{
+				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
+				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
+				conn.createStatement().execute("CREATE TABLE IF NOT EXISTS \"CustomerAccountBI\" "
+						+ "(\"CustomerDetails\".\"accountNumber\" VARCHAR NOT NULL PRIMARY KEY, "
+						+ "\"CustomerDetails\".\"firstName\" VARCHAR, "
+						+ "\"CustomerDetails\".\"lastName\" VARCHAR, "
+						+ "\"CustomerDetails\".\"age\" VARCHAR, "
+						+ "\"CustomerDetails\".\"gender\" VARCHAR, "
+						+ "\"CustomerDetails\".\"streetAddress\" VARCHAR, "
+						+ "\"CustomerDetails\".\"city\" VARCHAR, "
+						+ "\"CustomerDetails\".\"state\" VARCHAR, "
+						+ "\"CustomerDetails\".\"zipcode\" VARCHAR, "
+						+ "\"CustomerDetails\".\"latitude\" DOUBLE, "
+						+ "\"CustomerDetails\".\"longitude\" DOUBLE, "
+						+ "\"CustomerDetails\".\"ipAddress\" VARCHAR, "
+						+ "\"CustomerDetails\".\"port\" VARCHAR, "
+						+ "\"AccountDetails\".\"accountNumber\" VARCHAR, "
+						+ "\"AccountDetails\".\"accountType\" VARCHAR, "
+						+ "\"AccountDetails\".\"accountLimit\" VARCHAR, "
+						+ "\"AccountDetails\".\"isActive\" VARCHAR, "
+						+ "\"AccountDetails\".\"distanceMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"distanceDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"timeDeltaSecMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"timeDeltaSecDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"conAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"conAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"gasAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"gasAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"rAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"rAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"elecAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"elecAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"entAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"entAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"hbAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"hbAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"restAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"restAmtDev\" DOUBlE, "
+						+ "\"AccountDetails\".\"grocAmtMean\" DOUBlE, "
+						+ "\"AccountDetails\".\"grocAmtDev\" DOUBlE)");
+				conn.commit();
+				
+				conn.createStatement().executeUpdate("UPSERT INTO \"CustomerAccountBI\" VALUES("
+						+ "'Regina', "
+						+ "'SMITH', "
+						+ "'32', "
+						+ "'Female', "
+						+ "'1234 Tampa Ave', "
+						+ "'Cherry Hill', "
+						+ "'NJ', "
+						+ "'08003', "
+						+ "39.919512, "
+						+ "-75.005711, "
+						+ "\" \" , "
+						+ "\" \" , "
+						+ "\"19123\", "
+						+ "\"VISA\", "
+						+ "\"20000\", "
+						+ "\"true\", "
+						+ "9.173712305, "
+						+ "5.968364997, "
+						+ "5398.577075, "
+						+ "6968.79762, "
+						+ "16.87915743, "
+						+ "4.272822919, "
+						+ "36.9679558, "
+						+ "7.226414921, "
+						+ "174.1947298, "
+						+ "72.17713403, "
+						+ "98.97291196, "
+						+ "29.0160567, "
+						+ "39.4743295, "
+						+ "5.728492345, "
+						+ "84.07411631, "
+						+ "35.58637624, "
+						+ "73.73396065, "
+						+ "38.0403594, "
+						+ "83.73396065, "
+						+ "32.0403594)");
+				conn.commit();
+				
 				HTableDescriptor tableDescriptor = new HTableDescriptor("CustomerAccount");
 				HColumnDescriptor cfColumnFamily = new HColumnDescriptor("CustomerDetails".getBytes());
 				HColumnDescriptor cfIIColumnFamily = new HColumnDescriptor("AccountDetails".getBytes());
@@ -182,6 +269,10 @@ public class EnrichTransaction extends BaseRichBolt {
 			}
 			hbaseAdmin.close();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
