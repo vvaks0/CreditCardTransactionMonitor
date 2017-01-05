@@ -180,8 +180,8 @@ public class EnrichTransaction extends BaseRichBolt {
 			}else{
 				Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
 				conn = DriverManager.getConnection("jdbc:phoenix:"+ constants.getZkHost() + ":" + constants.getZkPort() + ":" + constants.getZkHBasePath());
-				conn.createStatement().execute("CREATE TABLE IF NOT EXISTS \"CustomerAccountBI\" "
-						+ "(\"CustomerDetails\".\"accountNumber\" VARCHAR PRIMARY KEY, "
+				conn.createStatement().execute("CREATE TABLE IF NOT EXISTS \"CustomerAccountBI\" ("
+						+ "\"CustomerDetails\".\"accountNumber\" VARCHAR PRIMARY KEY, "
 						+ "\"CustomerDetails\".\"firstName\" VARCHAR, "
 						+ "\"CustomerDetails\".\"lastName\" VARCHAR, "
 						+ "\"CustomerDetails\".\"age\" VARCHAR, "
