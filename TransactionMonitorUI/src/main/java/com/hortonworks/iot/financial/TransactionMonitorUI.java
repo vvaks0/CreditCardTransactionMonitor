@@ -223,7 +223,7 @@ public class TransactionMonitorUI extends HttpServlet{
 					+ "\"distanceFromHome\","
 					+ "\"distanceFromPrev\" "
 					+ " FROM \"TransactionHistory\" "
-					+ " WHERE \"transactionId\" = \"" + transactionId + "\"";
+					+ " WHERE \"transactionId\" = '" + transactionId + "'";
 	    	ResultSet rst;
 			try {
 				rst = conn.createStatement().executeQuery(transactionQueryString);
