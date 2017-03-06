@@ -58,6 +58,7 @@ import org.apache.storm.tuple.Values;
 public class FraudDetector extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
 	private OutputCollector collector;
+	private String transactionHistoryTableName = "TransactionHistory";
 	private HTable transactionHistoryTable = null;
 	private HTable customerAccountTable = null;
 	private SVMModel svm;
@@ -76,7 +77,7 @@ public class FraudDetector extends BaseRichBolt {
 		String transactionKey = stormProvenance.get(0).getEventKey();
 	    StormProvenanceEvent provenanceEvent = new StormProvenanceEvent(transactionKey, actionType, componentId, componentType);
 	    provenanceEvent.setTargetDataRepositoryType("HBASE");
-	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath() + ":" + transactionHistoryTable.getName().getNameAsString());
+	    provenanceEvent.setTargetDataRepositoryLocation(constants.getZkConnString() + ":" + constants.getZkHBasePath() + ":" + transactionHistoryTableName);
 	    stormProvenance.add(provenanceEvent);
 		
 		try {
