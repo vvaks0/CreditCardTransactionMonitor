@@ -494,17 +494,6 @@ getNifiHost () {
        	echo $NIFI_HOST
 }
 
-echo "*********************************Waiting for cluster install to complete..."
-waitForServiceToStart YARN
-
-waitForServiceToStart HDFS
-
-waitForServiceToStart HIVE
-
-waitForServiceToStart ZOOKEEPER
-
-sleep 10
-
 if [ ! -d "/usr/jdk64" ]; then
 	echo "*********************************Install and Enable Oracle JDK 8"
 	wget http://public-repo-1.hortonworks.com/ARTIFACTS/jdk-8u77-linux-x64.tar.gz
@@ -534,6 +523,17 @@ if [[ -z $CLUSTER_NAME ]]; then
 else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
+
+echo "*********************************Waiting for cluster install to complete..."
+waitForServiceToStart YARN
+
+waitForServiceToStart HDFS
+
+waitForServiceToStart HIVE
+
+waitForServiceToStart ZOOKEEPER
+
+sleep 10
 
 export ROOT_PATH=$(pwd)
 echo "*********************************ROOT PATH IS: $ROOT_PATH"
