@@ -37,6 +37,25 @@ waitForService () {
        	fi
 }
 
+waitForServiceToStart () {
+       	# Ensure that Service is not in a transitional state
+       	SERVICE=$1
+       	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+       	sleep 2
+       	echo "$SERVICE STATUS: $SERVICE_STATUS"
+       	LOOPESCAPE="false"
+       	if ! [[ "$SERVICE_STATUS" == STARTED ]]; then
+        	until [ "$LOOPESCAPE" == true ]; do
+                SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"state" :' | grep -Po '([A-Z]+)')
+            if [[ "$SERVICE_STATUS" == STARTED ]]; then
+                LOOPESCAPE="true"
+            fi
+            echo "*********************************$SERVICE Status: $SERVICE_STATUS"
+            sleep 2
+        done
+       	fi
+}
+
 stopService () {
        	SERVICE=$1
        	SERVICE_STATUS=$(getServiceStatus $SERVICE)
