@@ -1,45 +1,5 @@
 #!/bin/bash
 
-if [ ! -d "/usr/jdk64" ]; then
-	echo "*********************************Install and Enable Oracle JDK 8"
-	wget http://public-repo-1.hortonworks.com/ARTIFACTS/jdk-8u77-linux-x64.tar.gz
-	tar -vxzf jdk-8u77-linux-x64.tar.gz -C /usr
-	mv /usr/jdk1.8.0_77 /usr/jdk64
-	alternatives --install /usr/bin/java java /usr/jdk64/bin/java 3
-	alternatives --install /usr/bin/javac javac /usr/jdk64/bin/javac 3
-	alternatives --install /usr/bin/jar jar /usr/jdk64/bin/jar 3
-	export JAVA_HOME=/usr/jdk64
-	echo "export JAVA_HOME=/usr/jdk64" >> /etc/bashrc
-fi
-
-if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
-echo "*********************************Only Atlas Server installed, setting symbolic link"
-	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
-	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
-fi
-
-export AMBARI_HOST=$(hostname -f)
-echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
-
-export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9\-_!?.]+')
-
-if [[ -z $CLUSTER_NAME ]]; then
-        echo "Could not connect to Ambari Server. Please run the install script on the same host where Ambari Server is installed."
-        exit 1
-else
-       	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
-fi
-
-export ROOT_PATH=$(pwd)
-echo "*********************************ROOT PATH IS: $ROOT_PATH"
-
-export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
-export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
-echo "*********************************HDP VERSION IS: $VERSION"
-
-export HADOOP_USER_NAME=hdfs
-echo "*********************************HADOOP_USER_NAME set to HDFS"
-
 serviceExists () {
        	SERVICE=$1
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"status" : ' | grep -Po '([0-9]+)')
@@ -514,6 +474,58 @@ getNifiHost () {
 
        	echo $NIFI_HOST
 }
+
+echo "*********************************Waiting for cluster install to complete..."
+waitForServiceToStart YARN
+
+waitForServiceToStart HDFS
+
+waitForServiceToStart HIVE
+
+waitForServiceToStart ZOOKEEPER
+
+sleep 10
+
+if [ ! -d "/usr/jdk64" ]; then
+	echo "*********************************Install and Enable Oracle JDK 8"
+	wget http://public-repo-1.hortonworks.com/ARTIFACTS/jdk-8u77-linux-x64.tar.gz
+	tar -vxzf jdk-8u77-linux-x64.tar.gz -C /usr
+	mv /usr/jdk1.8.0_77 /usr/jdk64
+	alternatives --install /usr/bin/java java /usr/jdk64/bin/java 3
+	alternatives --install /usr/bin/javac javac /usr/jdk64/bin/javac 3
+	alternatives --install /usr/bin/jar jar /usr/jdk64/bin/jar 3
+	export JAVA_HOME=/usr/jdk64
+	echo "export JAVA_HOME=/usr/jdk64" >> /etc/bashrc
+fi
+
+if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
+echo "*********************************Only Atlas Server installed, setting symbolic link"
+	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
+	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
+fi
+
+export AMBARI_HOST=$(hostname -f)
+echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
+
+export CLUSTER_NAME=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters |grep cluster_name|grep -Po ': "(.+)'|grep -Po '[a-zA-Z0-9\-_!?.]+')
+
+if [[ -z $CLUSTER_NAME ]]; then
+        echo "Could not connect to Ambari Server. Please run the install script on the same host where Ambari Server is installed."
+        exit 1
+else
+       	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
+fi
+
+export ROOT_PATH=$(pwd)
+echo "*********************************ROOT PATH IS: $ROOT_PATH"
+
+export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
+export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
+echo "*********************************HDP VERSION IS: $VERSION"
+
+export HADOOP_USER_NAME=hdfs
+echo "*********************************HADOOP_USER_NAME set to HDFS"
+
 
 export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
