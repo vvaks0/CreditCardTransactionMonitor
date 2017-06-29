@@ -1,7 +1,10 @@
 #!/bin/bash
 
 installUtils () {
+	echo "*********************************Installing WGET..."
 	yum install -y wget
+	
+	echo "*********************************Installing Maven..."
 	wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O 	/etc/yum.repos.d/epel-apache-maven.repo
 	if [ $(cat /etc/system-release|grep -Po Amazon) == Amazon ]; then
 		sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
@@ -16,7 +19,35 @@ installUtils () {
 		alternatives --auto jar
 		ln -s /usr/lib/jvm/java-1.8.0 /usr/lib/jvm/java
 	fi
+	
+	echo "*********************************Installing GIT..."
 	yum install -y git
+	
+	echo "*********************************Installing Docker..."
+	echo " 				  *****************Installing Docker via Yum..."
+	if [ $(cat /etc/system-release|grep -Po Amazon) == Amazon ]; then
+		yum install -y docker
+	else
+		echo " 				  *****************Adding Docker Yum Repo..."
+		tee /etc/yum.repos.d/docker.repo <<-'EOF'
+		[dockerrepo]
+		name=Docker Repository
+		baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+		enabled=1
+		gpgcheck=1
+		gpgkey=https://yum.dockerproject.org/gpg
+		EOF
+		rpm -iUvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+		yum install -y docker-io
+	fi
+	
+	echo " 				  *****************Configuring Docker Permissions..."
+	groupadd docker
+	gpasswd -a yarn docker
+	echo " 				  *****************Registering Docker to Start on Boot..."
+	service docker start
+	chkconfig --add docker
+	chkconfig docker on
 }
 
 serviceExists () {
@@ -606,31 +637,7 @@ echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
 
 echo "*********************************Installing Utlities..."
 installUtils
-#wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O #/etc/yum.repos.d/epel-apache-maven.repo
-#yum install -y apache-maven
 
-#Install, Configure, and Start Docker
-echo "*********************************Installing Docker..."
-echo " 				  *****************Adding Docker Yum Repo..."
-tee /etc/yum.repos.d/docker.repo <<-'EOF'
-[dockerrepo]
-name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.dockerproject.org/gpg
-EOF
-
-echo " 				  *****************Installing Docker via Yum..."
-rpm -iUvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-yum -y install docker-io
-echo " 				  *****************Configuring Docker Permissions..."
-groupadd docker
-gpasswd -a yarn docker
-echo " 				  *****************Registering Docker to Start on Boot..."
-service docker start
-chkconfig --add docker
-chkconfig docker on
 echo " 				  *****************Create /root HDFS folder for Slider..."
 hadoop fs -mkdir /user/root/
 hadoop fs -chown root:hdfs /user/root/
