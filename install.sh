@@ -1,5 +1,24 @@
 #!/bin/bash
 
+installUtils () {
+	yum install -y wget
+	wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O 	/etc/yum.repos.d/epel-apache-maven.repo
+	if [ $(cat /etc/system-release|grep -Po Amazon) == Amazon ]; then
+		sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
+	fi
+	yum install -y apache-maven
+	if [ $(cat /etc/system-release|grep -Po Amazon) == Amazon ]; then
+		alternatives --install /usr/bin/java java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java 20000
+		alternatives --install /usr/bin/javac javac /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/javac 20000
+		alternatives --install /usr/bin/jar jar /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/jar 20000
+		alternatives --auto java
+		alternatives --auto javac
+		alternatives --auto jar
+		ln -s /usr/lib/jvm/java-1.8.0 /usr/lib/jvm/java
+	fi
+	yum install -y git
+}
+
 serviceExists () {
        	SERVICE=$1
        	SERVICE_STATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/$SERVICE | grep '"status" : ' | grep -Po '([0-9]+)')
@@ -585,10 +604,10 @@ echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
 
 . ~/.bash_profile
 
-# Install Maven
-echo "*********************************Installing Maven..."
-wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
-yum install -y apache-maven
+echo "*********************************Installing Utlities..."
+installUtils
+#wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O #/etc/yum.repos.d/epel-apache-maven.repo
+#yum install -y apache-maven
 
 #Install, Configure, and Start Docker
 echo "*********************************Installing Docker..."
