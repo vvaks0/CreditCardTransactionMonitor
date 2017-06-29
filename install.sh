@@ -556,12 +556,6 @@ if [ ! -d "/usr/jdk64" ]; then
 	echo "export JAVA_HOME=/usr/jdk64" >> /etc/bashrc
 fi
 
-if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
-echo "*********************************Only Atlas Server installed, setting symbolic link"
-	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
-	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
-fi
-
 export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 
@@ -574,6 +568,16 @@ else
        	echo "*********************************CLUSTER NAME IS: $CLUSTER_NAME"
 fi
 
+export ROOT_PATH=$(pwd)
+echo "*********************************ROOT PATH IS: $ROOT_PATH"
+
+export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
+export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
+echo "*********************************HDP VERSION IS: $VERSION"
+
+export HADOOP_USER_NAME=hdfs
+echo "*********************************HADOOP_USER_NAME set to HDFS"
+
 echo "*********************************Waiting for cluster install to complete..."
 waitForServiceToStart YARN
 
@@ -585,18 +589,12 @@ waitForServiceToStart ZOOKEEPER
 
 sleep 10
 
-export ROOT_PATH=$(pwd)
-echo "*********************************ROOT PATH IS: $ROOT_PATH"
+if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
+echo "*********************************Only Atlas Server installed, setting symbolic link"
+	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
+	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
+fi
 
-export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
-export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
-echo "*********************************HDP VERSION IS: $VERSION"
-
-export HADOOP_USER_NAME=hdfs
-echo "*********************************HADOOP_USER_NAME set to HDFS"
-
-
-export JAVA_HOME=/usr/jdk64
 NAMENODE_HOST=$(getNameNodeHost)
 export NAMENODE_HOST=$NAMENODE_HOST
 HIVESERVER_HOST=$(getHiveServerHost)
