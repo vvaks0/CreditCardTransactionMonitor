@@ -154,16 +154,6 @@ startService (){
        	fi
 }
 
-getLatestNifiBits () {
-       	if [ "$INTVERSION" -gt 24 ]; then
-       		echo "*********************************Removing Current Version of NIFI..."
-       		rm -rf /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
-
-       	echo "*********************************Downloading Newest Version of NIFI..."
-       	git clone https://github.com/abajwa-hw/ambari-nifi-service.git  /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/NIFI
-       	fi
-}
-
 waitForAmbari () {
        	# Wait for Ambari
        	LOOPESCAPE="false"
@@ -188,65 +178,6 @@ waitForAmbari () {
        	done
 }
 
-installNifiService () {
-       	echo "*********************************Creating NIFI service..."
-       	# Create NIFI service
-       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI
-
-       	sleep 2
-       	echo "*********************************Adding NIFI MASTER component..."
-       	# Add NIFI Master component to service
-       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_MASTER
-
-       	sleep 2
-       	echo "*********************************Creating NIFI configuration..."
-
-       	# Create and apply configuration
-       	#sleep 2
-		if [ "$INTVERSION" -gt 24 ]; then
-			/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-env $ROOT_PATH/Nifi/config/nifi-env.json
-		else	
-			/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-logback-env $ROOT_PATH/Nifi/config/nifi-logback-env.json
-		fi
-		sleep 2
-       	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-ambari-config $ROOT_PATH/Nifi/config/nifi-ambari-config.json
-       	sleep 2
-       	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-bootstrap-env $ROOT_PATH/Nifi/config/nifi-bootstrap-env.json
-       	sleep 2
-       	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-flow-env $ROOT_PATH/Nifi/config/nifi-flow-env.json
-       	sleep 2
-       	/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-properties-env $ROOT_PATH/Nifi/config/nifi-properties-env.json
-       	sleep 2
-       	echo "*********************************Adding NIFI MASTER role to Host..."
-       	# Add NIFI Master role to Sandbox host
-       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$AMBARI_HOST/host_components/NIFI_MASTER
-
-       	sleep 30
-       	echo "*********************************Installing NIFI Service"
-       	# Install NIFI Service
-       	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-		
-		sleep 2       	
-       	if [ -z $TASKID ]; then
-       		until ! [ -z $TASKID ]; do
-       			TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
-       		 	echo "*********************************AMBARI TaskID " $TASKID
-       		done
-       	fi
-       	
-       	echo "*********************************AMBARI TaskID " $TASKID
-       	sleep 2
-       	LOOPESCAPE="false"
-       	until [ "$LOOPESCAPE" == true ]; do
-               	TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
-               	if [ "$TASKSTATUS" == COMPLETED ]; then
-                       	LOOPESCAPE="true"
-               	fi
-               	echo "*********************************Task Status" $TASKSTATUS
-               	sleep 2
-       	done
-}
-
 waitForNifiServlet () {
        	LOOPESCAPE="false"
        	until [ "$LOOPESCAPE" == true ]; do
@@ -262,10 +193,8 @@ waitForNifiServlet () {
        	done
 }
 
-
 deployTemplateToNifi () {
 	echo "*********************************Importing NIFI Template..."		
-	if [ "$INTVERSION" -gt 24 ]; then
        	# Import NIFI Template HDF 2.x
        	TEMPLATEID=$(curl -v -F template=@"$ROOT_PATH/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/process-groups/root/templates/upload | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
 		sleep 1
@@ -286,25 +215,13 @@ deployTemplateToNifi () {
 		
 		sleep 1
 		curl -d $PAYLOAD  -H "Content-Type: application/json" -X PUT http://$AMBARI_HOST:9090/nifi-api/process-groups/$ROOT_GROUP_ID
-	else
-       	 # Import NIFI Template HDF 1.x
-       	TEMPLATEID=$(curl -v -F template=@"$ROOT_PATH/Nifi/template/CreditFraudDetectionFlow.xml" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/templates | grep -Po '<id>([a-z0-9-]+)' | grep -Po '>([a-z0-9-]+)' | grep -Po '([a-z0-9-]+)')
-       	sleep 1		
-		
-		# Instantiate NIFI Template HDF 1.x
-		echo "*********************************Instantiating NIFI Flow..."
-		REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
-		sleep 1
-		
-		curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "templateId=$TEMPLATEID&originX=100&originY=100&version=$REVISION" -X POST http://$AMBARI_HOST:9090/nifi-api/controller/process-groups/root/template-instance
-	fi
+
 	sleep 1
 }
 
 # Start NIFI Flow
 startNifiFlow () {
     echo "*********************************Starting NIFI Flow..."
-	if [ "$INTVERSION" -gt 24 ]; then	     
     	# Start NIFI Flow HDF 2.x
     	TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
        	length=${#TARGETS[@]}
@@ -337,21 +254,6 @@ startNifiFlow () {
        		
        		curl -u admin:admin -i -H "Content-Type:application/json" -d "${PAYLOAD}" -X PUT ${TARGETS[i]}
        	done
-	else       	
-       	# Start NIFI Flow HDF 1.x
-		echo "*********************************Starting NIFI Flow..."
-		REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
-
-		TARGETS=($(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/process-groups/root/processors | grep -Po '\"uri\":\"([a-z0-9-://.]+)' | grep -Po '(?!.*\")([a-z0-9-://.]+)'))
-length=${#TARGETS[@]}
-
-		for ((i = 0; i != length; i++)); do
-   			echo curl -u admin:admin -i -X GET ${TARGETS[i]}
-   			echo "Current Revision: " $REVISION
-   			curl -u admin:admin -i -H "Content-Type:application/x-www-form-urlencoded" -d "state=RUNNING&version=$REVISION" -X PUT ${TARGETS[i]}
-		   REVISION=$(curl -u admin:admin  -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller/revision |grep -Po '\"version\":([0-9]+)' | grep -Po '([0-9]+)')
-		done
-	fi
 }
 
 installDemoControl () {
@@ -544,6 +446,160 @@ getNifiHost () {
        	echo $NIFI_HOST
 }
 
+captureEnvironment () {
+	NIFI_HOST=$(getNifiHost)
+	export NIFI_HOST=$NIFI_HOST
+	NAMENODE_HOST=$(getNameNodeHost)
+	export NAMENODE_HOST=$NAMENODE_HOST
+	HIVESERVER_HOST=$(getHiveServerHost)
+	export HIVESERVER_HOST=$HIVESERVER_HOST
+	HIVESERVER_INTERACTIVE_HOST=$(getHiveInteractiveServerHost)
+	export HIVESERVER_INTERACTIVE_HOST=$HIVESERVER_INTERACTIVE_HOST
+	HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
+	export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
+	HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
+	export HIVE_METASTORE_URI=$HIVE_METASTORE_URI
+	ZK_HOST=$AMBARI_HOST
+	export ZK_HOST=$ZK_HOST
+	KAFKA_BROKER=$(getKafkaBroker)
+	export KAFKA_BROKER=$KAFKA_BROKER
+	ATLAS_HOST=$(getAtlasHost)
+	export ATLAS_HOST=$ATLAS_HOST
+	COMETD_HOST=$AMBARI_HOST
+	export COMETD_HOST=$COMETD_HOST
+	env
+	
+	echo "export NIFI_HOST=$NIFI_HOST" >> /etc/bashrc
+	echo "export NAMENODE_HOST=$NAMENODE_HOST" >> /etc/bashrc
+	echo "export ZK_HOST=$ZK_HOST" >> /etc/bashrc
+	echo "export KAFKA_BROKER=$KAFKA_BROKER" >> /etc/bashrc
+	echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
+	echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> /etc/bashrc
+	echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> /etc/bashrc
+	echo "export COMETD_HOST=$COMETD_HOST" >> /etc/bashrc
+
+	echo "export NIFI_HOST=$NIFI_HOST" >> ~/.bash_profile
+	echo "export NAMENODE_HOST=$NAMENODE_HOST" >> ~/.bash_profile
+	echo "export ZK_HOST=$ZK_HOST" >> ~/.bash_profile
+	echo "export KAFKA_BROKER=$KAFKA_BROKER" >> ~/.bash_profile
+	echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
+	echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> ~/.bash_profile
+	echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> ~/.bash_profile
+	echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
+
+	. ~/.bash_profile
+}
+
+installNifiAtlasReporter () {
+	echo "*********************************Building Nifi Atlas Reporter"
+	git clone https://github.com/vakshorton/NifiAtlasBridge.git
+	cd $ROOT_PATH/NifiAtlasBridge/NifiAtlasFlowReportingTask
+	mvn clean install
+	cd $ROOT_PATH/NifiAtlasBridge/NifiAtlasLineageReportingTask
+	mvn clean install
+	cd $ROOT_PATH
+	
+	echo "*********************************Install Nifi Atlas Reporters..."
+	mv -vf $ROOT_PATH/NifiAtlasBridge/NifiAtlasFlowReportingTask/target/NifiAtlasFlowReportingTask-0.0.1-SNAPSHOT.nar /usr/hdf/current/nifi/lib/
+	mv -vf $ROOT_PATH/NifiAtlasBridge/NifiAtlasLineageReportingTask/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /usr/hdf/current/nifi/lib/
+}
+
+installNifiService () {
+       	echo "*********************************Creating NIFI service..."
+       	# Create NIFI service
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI
+
+       	sleep 2
+       	echo "*********************************Adding NIFI MASTER component..."
+       	# Add NIFI Master component to service
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_MASTER
+		curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI/components/NIFI_CA
+		
+       	sleep 2
+       	echo "*********************************Creating NIFI configuration..."
+
+       	# Create and apply configuration
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-ambari-config $CONFIG_PATH/hdf-config/nifi-config/nifi-ambari-config.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-ambari-ssl-config $CONFIG_PATH/hdf-config/nifi-config/nifi-ambari-ssl-config.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-authorizers-env $CONFIG_PATH/hdf-config/nifi-config/nifi-authorizers-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-bootstrap-env $CONFIG_PATH/hdf-config/nifi-config/nifi-bootstrap-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-bootstrap-notification-services-env $CONFIG_PATH/hdf-config/nifi-config/nifi-bootstrap-notification-services-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-env $CONFIG_PATH/hdf-config/nifi-config/nifi-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-flow-env $CONFIG_PATH/hdf-config/nifi-config/nifi-flow-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-login-identity-providers-env $CONFIG_PATH/hdf-config/nifi-config/nifi-login-identity-providers-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-node-logback-env $CONFIG_PATH/hdf-config/nifi-config/nifi-node-logback-env.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-properties $CONFIG_PATH/hdf-config/nifi-config/nifi-properties.json
+
+		/var/lib/ambari-server/resources/scripts/configs.sh set $AMBARI_HOST $CLUSTER_NAME nifi-state-management-env $CONFIG_PATH/hdf-config/nifi-config/nifi-state-management-env.json
+		
+       	echo "*********************************Adding NIFI MASTER role to Host..."
+       	# Add NIFI Master role to Ambari Host
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$AMBARI_HOST/host_components/NIFI_MASTER
+
+       	echo "*********************************Adding NIFI CA role to Host..."
+		# Add NIFI CA role to Ambari Host
+       	curl -u admin:admin -H "X-Requested-By:ambari" -i -X POST http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/hosts/$AMBARI_HOST/host_components/NIFI_CA
+
+       	sleep 30
+       	echo "*********************************Installing NIFI Service"
+       	# Install NIFI Service
+       	TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+		
+		sleep 2       	
+       	if [ -z $TASKID ]; then
+       		until ! [ -z $TASKID ]; do
+       			TASKID=$(curl -u admin:admin -H "X-Requested-By:ambari" -i -X PUT -d '{"RequestInfo": {"context" :"Install Nifi"}, "Body": {"ServiceInfo": {"maintenance_state" : "OFF", "state": "INSTALLED"}}}' http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/services/NIFI | grep "id" | grep -Po '([0-9]+)')
+       		 	echo "*********************************AMBARI TaskID " $TASKID
+       		done
+       	fi
+       	
+       	echo "*********************************AMBARI TaskID " $TASKID
+       	sleep 2
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+               	TASKSTATUS=$(curl -u admin:admin -X GET http://$AMBARI_HOST:8080/api/v1/clusters/$CLUSTER_NAME/requests/$TASKID | grep "request_status" | grep -Po '([A-Z]+)')
+               	if [ "$TASKSTATUS" == COMPLETED ]; then
+                       	LOOPESCAPE="true"
+               	fi
+               	echo "*********************************Task Status" $TASKSTATUS
+               	sleep 2
+       	done
+}
+
+waitForNifiServlet () {
+       	LOOPESCAPE="false"
+       	until [ "$LOOPESCAPE" == true ]; do
+       		TASKSTATUS=$(curl -u admin:admin -i -X GET http://$AMBARI_HOST:9090/nifi-api/controller | grep -Po 'OK')
+       		if [ "$TASKSTATUS" == OK ]; then
+               		LOOPESCAPE="true"
+       		else
+               		TASKSTATUS="PENDING"
+       		fi
+       		echo "*********************************Waiting for NIFI Servlet..."
+       		echo "*********************************NIFI Servlet Status... " $TASKSTATUS
+       		sleep 2
+       	done
+}
+
+instalHDFManagementPack () {
+	wget http://public-repo-1.hortonworks.com/HDF/centos7/3.x/updates/3.0.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-3.0.0.0-453.tar.gz
+ambari-server install-mpack --mpack=hdf-ambari-mpack-3.0.0.0-453.tar.gz --verbose
+
+	sleep 2
+	ambari-server restart
+	waitForAmbari
+	sleep 2
+}
+
 if [ ! -d "/usr/jdk64" ]; then
 	echo "*********************************Install and Enable Oracle JDK 8"
 	wget http://public-repo-1.hortonworks.com/ARTIFACTS/jdk-8u77-linux-x64.tar.gz
@@ -571,9 +627,12 @@ fi
 export ROOT_PATH=$(pwd)
 echo "*********************************ROOT PATH IS: $ROOT_PATH"
 
-export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
-export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
-echo "*********************************HDP VERSION IS: $VERSION"
+echo "*********************************Preparing HDF Artifacts..."
+cd ~
+git clone https://github.com/vakshorton/CloudBreakArtifacts
+export CONFIG_PATH=~/CloudBreakArtifacts
+cd $ROOT_PATH
+echo "*********************************CONFIG PATH IS: $CONFIG_PATH"
 
 export HADOOP_USER_NAME=hdfs
 echo "*********************************HADOOP_USER_NAME set to HDFS"
@@ -589,52 +648,62 @@ waitForServiceToStart ZOOKEEPER
 
 sleep 10
 
+export VERSION=`hdp-select status hadoop-client | sed 's/hadoop-client - \([0-9]\.[0-9]\).*/\1/'`
+export INTVERSION=$(echo $VERSION*10 | bc | grep -Po '([0-9][0-9])')
+echo "*********************************HDP VERSION IS: $VERSION"
+
+echo "*********************************Load Demo Control Service into Ambari"
+cd $ROOT_PATH
+cp -Rvf $ROOT_PATH/CREDIT_FRAUD_DEMO_CONTROL /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
+
 if [[ -d "/usr/hdp/current/atlas-server"  && ! -d "/usr/hdp/current/atlas-client" ]]; then 
 echo "*********************************Only Atlas Server installed, setting symbolic link"
 	ln -s /usr/hdp/current/atlas-server /usr/hdp/current/atlas-client
 	ln -s /usr/hdp/current/atlas-server/conf/application.properties /usr/hdp/current/atlas-client/conf/atlas-application.properties
 fi
 
-NAMENODE_HOST=$(getNameNodeHost)
-export NAMENODE_HOST=$NAMENODE_HOST
-HIVESERVER_HOST=$(getHiveServerHost)
-export HIVESERVER_HOST=$HIVESERVER_HOST
-HIVESERVER_INTERACTIVE_HOST=$(getHiveInteractiveServerHost)
-export HIVESERVER_INTERACTIVE_HOST=$HIVESERVER_INTERACTIVE_HOST
-HIVE_METASTORE_HOST=$(getHiveMetaStoreHost)
-export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST
-HIVE_METASTORE_URI=thrift://$HIVE_METASTORE_HOST:9083
-export HIVE_METASTORE_URI=$HIVE_METASTORE_URI
-ZK_HOST=$AMBARI_HOST
-export ZK_HOST=$ZK_HOST
-KAFKA_BROKER=$(getKafkaBroker)
-export KAFKA_BROKER=$KAFKA_BROKER
-ATLAS_HOST=$(getAtlasHost)
-export ATLAS_HOST=$ATLAS_HOST
-COMETD_HOST=$AMBARI_HOST
-export COMETD_HOST=$COMETD_HOST
-env
+sleep 2
 
-echo "export NAMENODE_HOST=$NAMENODE_HOST" >> /etc/bashrc
-echo "export ZK_HOST=$ZK_HOST" >> /etc/bashrc
-echo "export KAFKA_BROKER=$KAFKA_BROKER" >> /etc/bashrc
-echo "export ATLAS_HOST=$ATLAS_HOST" >> /etc/bashrc
-echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> /etc/bashrc
-echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> /etc/bashrc
-echo "export COMETD_HOST=$COMETD_HOST" >> /etc/bashrc
-
-echo "export NAMENODE_HOST=$NAMENODE_HOST" >> ~/.bash_profile
-echo "export ZK_HOST=$ZK_HOST" >> ~/.bash_profile
-echo "export KAFKA_BROKER=$KAFKA_BROKER" >> ~/.bash_profile
-echo "export ATLAS_HOST=$ATLAS_HOST" >> ~/.bash_profile
-echo "export HIVE_METASTORE_HOST=$HIVE_METASTORE_HOST" >> ~/.bash_profile
-echo "export HIVE_METASTORE_URI=$HIVE_METASTORE_URI" >> ~/.bash_profile
-echo "export COMETD_HOST=$COMETD_HOST" >> ~/.bash_profile
-
-. ~/.bash_profile
+echo "*********************************Install HDF Management Pack..."
+instalHDFManagementPack 
+sleep 2
 
 echo "*********************************Installing Utlities..."
 installUtils
+sleep 2
+
+echo "*********************************Installing NIFI..."
+installNifiService
+sleep 2
+
+NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
+if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
+	echo "*********************************NIFI Service Not Present, Installing..."
+    waitForAmbari
+    installNifiService
+fi
+
+installNifiAtlasReporter
+startService NIFI	 	
+
+NIFI_STATUS=$(getServiceStatus NIFI)
+echo "*********************************Checking NIFI status..."
+if ! [[ $NIFI_STATUS == STARTED || $NIFI_STATUS == INSTALLED ]]; then
+       	echo "*********************************NIFI is in a transitional state, waiting..."
+       	waitForService NIFI
+       	echo "*********************************NIFI has entered a ready state..."
+fi
+
+if [[ $NIFI_STATUS == INSTALLED ]]; then
+       	startService NIFI
+else
+       	echo "*********************************NIFI Service Started..."
+fi
+
+sleep 2
+echo "*********************************Capturing Environment Data..."
+captureEnvironment
+sleep 2
 
 echo " 				  *****************Create /root HDFS folder for Slider..."
 hadoop fs -mkdir /user/root/
@@ -655,80 +724,15 @@ echo "*********************************Copy redeployApplication.sh to /root"
 cd $ROOT_PATH
 cp -Rvf $ROOT_PATH/redeployApplication.sh /root
 
-echo "*********************************Load Demo Control Service into Ambari"
-cd $ROOT_PATH
-cp -Rvf $ROOT_PATH/CREDIT_FRAUD_DEMO_CONTROL /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
-
-echo "*********************************Load Data Plane Client Service into Ambari"
-git clone https://github.com/vakshorton/Utils
-cp -Rvf $ROOT_PATH/Utils/DATA_PLANE_CLIENT /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
+#echo "*********************************Load Data Plane Client Service into Ambari"
+#git clone https://github.com/vakshorton/Utils
+#cp -Rvf $ROOT_PATH/Utils/DATA_PLANE_CLIENT /var/lib/ambari-server/resources/stacks/HDP/$VERSION/services/
 
 # Build from source
 echo "*********************************Building Credit Card Transaction Monitor Storm Topology"
 cd $ROOT_PATH/CreditCardTransactionMonitor
 mvn clean package
 cp -vf target/CreditCardTransactionMonitor-0.0.1-SNAPSHOT.jar /home/storm
-
-# Build from source
-echo "*********************************Building Nifi Atlas Reporter"
-cd $ROOT_PATH
-git clone https://github.com/vakshorton/NifiAtlasBridge.git
-cd $ROOT_PATH/NifiAtlasBridge/NifiAtlasFlowReportingTask
-mvn clean install
-cd $ROOT_PATH/NifiAtlasBridge/NifiAtlasLineageReportingTask
-mvn clean install
-cd $ROOT_PATH
-
-NIFI_SERVICE_PRESENT=$(serviceExists NIFI)
-if [[ "$NIFI_SERVICE_PRESENT" == 0 ]]; then
-       	echo "*********************************NIFI Service Not Present, Installing..."
-       	getLatestNifiBits
-       	ambari-server restart
-       	waitForAmbari
-       	installNifiService
-       	
-       	mkdir /var/run/nifi
-		chown nifi:nifi /var/run/nifi
-		
-		echo "*********************************Install Nifi Atlas Reporter..."
-		NIFI_HOME=$(ls /opt/|grep nifi)
-		if [ -z "$NIFI_HOME" ]; then
-        	NIFI_HOME=$(ls /opt/|grep HDF)
-		fi
-		export NIFI_HOME
-		
-		mv -vf  $ROOT_PATH/NifiAtlasBridge/NifiAtlasFlowReportingTask/target/NifiAtlasFlowReportingTask-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
-		
-		mv -vf  $ROOT_PATH/NifiAtlasBridge/NifiAtlasLineageReportingTask/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
-       	
-       	startService NIFI
-else
-       	echo "*********************************NIFI Service Already Installed"
-		echo "*********************************Install Nifi Atlas Reporter..."
-		stopService NIFI
-		NIFI_HOME=$(ls /opt/|grep nifi)
-		if [ -z "$NIFI_HOME" ]; then
-        	NIFI_HOME=$(ls /opt/|grep HDF)
-		fi
-		export NIFI_HOME
-		cp -vf  $ROOT_PATH/NifiAtlasLineageReporter/target/NifiAtlasLineageReporter-0.0.1-SNAPSHOT.nar /opt/$NIFI_HOME/lib
-		sleep 2
-		startService NIFI
-fi
-
-NIFI_STATUS=$(getServiceStatus NIFI)
-echo "*********************************Checking NIFI status..."
-if ! [[ $NIFI_STATUS == STARTED || $NIFI_STATUS == INSTALLED ]]; then
-       	echo "*********************************NIFI is in a transitional state, waiting..."
-       	waitForService NIFI
-       	echo "*********************************NIFI has entered a ready state..."
-fi
-
-if [[ $NIFI_STATUS == INSTALLED ]]; then
-       	startService NIFI
-else
-       	echo "*********************************NIFI Service Started..."
-fi
 
 echo "*********************************Install GeoLite City DB for Nifi..."
 wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz -P /home/centos
@@ -745,11 +749,6 @@ startNifiFlow
 cd $ROOT_PATH
 
 echo "*********************************Installing Demo Control Service ..."
-NIFI_HOST=$(getNifiHost)
-export NIFI_HOST=$NIFI_HOST
-echo "export NIFI_HOST=$NIFI_HOST" >> /etc/bashrc
-echo "export NIFI_HOST=$NIFI_HOST" >> ~/.bash_profile
-. ~/.bash_profile
 installDemoControl
 
 sleep 2
