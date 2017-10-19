@@ -295,8 +295,18 @@ div#account_container{
   
 	function connectFraudAlertTopic(){
   		dojox.cometd.init(pubSubUrl);
-
+		
   		dojox.cometd.subscribe("/*", function(message){
+  			var accountNumber = message.data.accountnumber
+  			var score = message.data.score
+  			var transactionId = message.data.transasctionid
+  			var transactionTimeStamp = message.data.transactiontimestamp
+  			var accountType = message.data.accounttype
+  			var amount =  message.data.amount
+  			var merchantId = message.data.merchantid
+  			var merchantType = message.data.merchanttype
+  			
+  			
   			if(message.channel == alertChannel || message.channel == incomingTransactionsChannel){
   				console.log(message)
   				var iDiv = document.getElementById("inbox");
@@ -306,39 +316,43 @@ div#account_container{
   				var chartDiv = document.createElement("div");
   				
   				messageDiv.className = "message";
-  				messageDiv.id = message.data.transactionTimeStamp;
+  				messageDiv.id = transactionTimeStamp;
   				messageDiv.onclick = function(){showPreview(this.id)};
-  				messageDiv.ondblclick = function(){location.href='CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber};
+  				messageDiv.ondblclick = function(){location.href='CustomerOverview?requestType=customerDetails&accountNumber=' + accountNumber};
   				messageDiv.onmouseout = function(){closePreview(this.id)};
   				if(message.channel == alertChannel){
-  					if(message.data.score == 50){
+  					if(score == 50){
   						messageDiv.style.backgroundColor = "rgba(216, 216, 20, 0.25)";	
-  					}else if(message.data.score == 75){
+  					}else if(score == 75){
   						messageDiv.style.backgroundColor = "rgba(216,138,20,0.25)";
-  					}else if(message.data.score == 100){	
+  					}else if(score == 100){	
+  						messageDiv.style.backgroundColor = "rgba(216,20,20,0.25)";
+  					}else{
   						messageDiv.style.backgroundColor = "rgba(216,20,20,0.25)";
   					}
-  					messageDiv.innerHTML = 'TransactionId: ' + message.data.transactionId + '<br>' +
+  					messageDiv.innerHTML = 'TransactionId: ' + transactionId + '<br>' +
   					<%--'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber +'">' + message.data.accountNumber + '</a><br>' + --%>
-					'Account Number: ' + message.data.accountNumber; 	
+					'Account Number: ' + accountNumber; 	
   				}else{
   					messageDiv.style.backgroundColor = "rgba(63,171,42,.25)";
-  					messageDiv.innerHTML = 'TransactionId: ' + message.data.transactionId + '<br>' +
+  					messageDiv.innerHTML = 'TransactionId: ' + transactionId + '<br>' +
   					<%--'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber +'">' + message.data.accountNumber + '</a><br>' + --%>
-					'Account Number: ' + message.data.accountNumber;
+					'Account Number: ' + accountNumber;
   				}	
   				previewDiv.className = "chart";
-  				previewDiv.id = "preview" + message.data.transactionTimeStamp;
-  				previewDiv.innerHTML = 'TransactionId: ' + message.data.transactionId + '<br>' +
-					'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + message.data.accountNumber +'">' + message.data.accountNumber + '</a><br>' +
-					'Account Type: ' + message.data.accountType + '<br>' +
-					'Amount: ' + message.data.amount + '<br>' +
-					'Merchant Id: ' + message.data.merchantId + '<br>' +
-					'Merchant Type: ' + message.data.merchantType + '<br>' +
-					'Time of Transaction: ' + message.data.transactionTimeStamp + '<br><br>' +
-					'Reason Flagged: ' + reasonFlagged;
+  				previewDiv.id = "preview" + transactionTimeStamp;
+  				previewDiv.innerHTML = 'TransactionId: ' + transactionId + '<br>' +
+					'Account Number:  <a href="CustomerOverview?requestType=customerDetails&accountNumber=' + accountNumber +'">' + accountNumber + '</a><br>' +
+					'Account Type: ' + accountType + '<br>' +
+					'Amount: ' + amount + '<br>' +
+					'Merchant Id: ' + merchantId + '<br>' +
+					'Merchant Type: ' + merchantType + '<br>' +
+					'Time of Transaction: ' + transactionTimeStamp + '<br><br>';
+				if(message.channel == alertChannel){	
+					previewDiv.innerHTML += 'Reason Flagged: ' + reasonFlagged;
+  				}	
 				chartDiv.className = "chart"
-		  		chartDiv.id = "chart" + message.data.transactionTimeStamp;
+		  		chartDiv.id = "chart" + transactionTimeStamp;
 		  		//chartDiv.onclick = function(){showPreview(this.id)};
 		  		//chartDiv.onmouseout = function(){closePreview(this.id)};
 										
@@ -404,19 +418,27 @@ div#account_container{
   
   function drawSDChart(message){
       var chartValues = message;
-      var amountMean = chartValues.data.amountMean;
-      var amountDev = chartValues.data.amountDev;
+      //var amountMean = chartValues.data.amountMean;
+      //var amountDev = chartValues.data.amountDev;
+      //var amount = chartValues.data.amount;
+      //var distanceMean = chartValues.data.distanceMean; 
+	  //var distanceDev = chartValues.data.distanceDev;
+	  //var distancePrev = chartValues.data.distancePrev;
+	  var amountMean = chartValues.data.amountmean;
+      var amountDev = chartValues.data.amountdev;
       var amount = chartValues.data.amount;
-      var distanceMean = chartValues.data.distanceMean; 
-	  var distanceDev = chartValues.data.distanceDev;
-	  var distancePrev = chartValues.data.distancePrev;
+      var distanceMean = chartValues.data.distancemean; 
+	  var distanceDev = chartValues.data.distancedev;
+	  var distancePrev = chartValues.data.distanceprev;
 	  var timeMean = 60;
 	  var timeDev = 22;
 	  var time = 50;
 	  
+	  var transactionTimeStamp = chartValues.data.transactiontimestamp
+	  
       $(function () {
 
-          $('#chart' + chartValues.data.transactionTimeStamp).highcharts({
+          $('#chart' +transactionTimeStamp).highcharts({
               chart: {
                   type: 'columnrange',
                   inverted: true,
