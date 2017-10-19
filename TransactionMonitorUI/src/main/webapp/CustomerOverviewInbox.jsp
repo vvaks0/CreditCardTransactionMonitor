@@ -429,7 +429,7 @@ div#account_container{
       var amount = chartValues.data.amount;
       var distanceMean = chartValues.data.distancemean; 
 	  var distanceDev = chartValues.data.distancedev;
-	  var distancePrev = chartValues.data.distance;
+	  var distancePrev = 10//chartValues.data.distance;
 	  var timeMean = 60;
 	  var timeDev = 22;
 	  var time = 50;
