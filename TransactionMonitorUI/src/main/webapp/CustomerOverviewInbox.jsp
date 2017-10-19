@@ -299,7 +299,7 @@ div#account_container{
   		dojox.cometd.subscribe("/*", function(message){
   			var accountNumber = message.data.accountnumber
   			var score = message.data.score
-  			var transactionId = message.data.transasctionid
+  			var transactionId = message.data.transactionid
   			var transactionTimeStamp = message.data.transactiontimestamp
   			var accountType = message.data.accounttype
   			var amount =  message.data.amount
@@ -429,7 +429,7 @@ div#account_container{
       var amount = chartValues.data.amount;
       var distanceMean = chartValues.data.distancemean; 
 	  var distanceDev = chartValues.data.distancedev;
-	  var distancePrev = chartValues.data.distanceprev;
+	  var distancePrev = chartValues.data.distance;
 	  var timeMean = 60;
 	  var timeDev = 22;
 	  var time = 50;
