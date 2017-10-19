@@ -538,7 +538,7 @@ public class TransactionMonitorUI extends HttpServlet{
 		
 	    public Map<String, Integer> getMerchantTypeShare() throws ClassNotFoundException, SQLException{
 	    	Map<String, Integer> merchantTypeShare = new HashMap<String, Integer>();
-	        ResultSet rst = conn.createStatement().executeQuery("SELECT MERCHANTTYPE COUNT(MERCHANTTYPE) AS MERCHANTCOUNT "
+	        ResultSet rst = conn.createStatement().executeQuery("SELECT MERCHANTTYPE, COUNT(MERCHANTTYPE) AS MERCHANTCOUNT "
 	        		+ "FROM TRANSACTIONHISTORY WHERE FRAUDULENT = 'false' GROUP BY MERCHANTTYPE");
 	        while (rst.next()) {
 	        	merchantTypeShare.put(rst.getString(1), rst.getInt(2));
