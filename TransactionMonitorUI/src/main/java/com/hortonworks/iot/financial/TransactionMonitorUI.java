@@ -164,7 +164,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        	request.getRequestDispatcher("CustomerOverviewInbox.jsp").forward(request, response);
 	        } else if(requestType.equalsIgnoreCase("customerDetails")){   
 	        	accountNumber = request.getParameter("accountNumber");
-	        	accountDetails = getAccountDetails(accountNumber);
+	        	accountDetails = getAccountDetailsSQL(accountNumber);
 	        	transactionHistory = getTransactionHistorySQL();
 				try {
 					merchantTypeShare = getMerchantTypeShare();
@@ -184,15 +184,15 @@ public class TransactionMonitorUI extends HttpServlet{
 	        }else if(requestType.equalsIgnoreCase("sendFraudNotice")){
 	        	accountNumber = request.getParameter("accountNumber");
 	        	fraudulentTransactionId = request.getParameter("fraudulentTransactionId");
-	        	accountDetails = getAccountDetails(accountNumber);
+	        	accountDetails = getAccountDetailsSQL(accountNumber);
 	        	accountDetails.setIsAccountActive("false");
 	        	fraudulentTransaction = getTransactionSQL(fraudulentTransactionId);
 	        	fraudulentTransaction.setFraudulent("true");
 	        	transactionHistory = getTransactionHistorySQL();
 	        	System.out.println("******** Sending Fraud Notification to Customer: " + fraudulentTransactionId);
 	        	sendFraudNotification(fraudulentTransaction);
-	        	updateAccountStatus(accountDetails);
-	        	updateTransactionStatus(fraudulentTransaction);
+	        	updateAccountStatusSQL(accountDetails);
+	        	updateTransactionStatusSQL(fraudulentTransaction);
 	        	try {
 					merchantTypeShare = getMerchantTypeShare();
 				} catch (ClassNotFoundException e) {
