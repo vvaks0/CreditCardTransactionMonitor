@@ -55,6 +55,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    private String cometdListenPort = "8091";
 		private String defaultAccountNumber = "19123";
 		private String mapAPIKey = "NO_API_KEY_FOUND";
+		private boolean SAMDemo = false;
 		private Connection conn;
 	    
 	    @SuppressWarnings("deprecation")
@@ -95,6 +96,9 @@ public class TransactionMonitorUI extends HttpServlet{
 	        if(env.get("MAP_API_KEY") != null){
 	        	this.mapAPIKey  = (String)env.get("MAP_API_KEY");
 	        }
+	        if(env.get("SAM_DEMO") != null){
+	        	this.SAMDemo  = Boolean.valueOf((String)env.get("SAM_DEMO"));
+	        }
 	        System.out.println("********************** Zookeeper Host: " + zkHost);
 	        System.out.println("********************** Zookeeper: " + zkPort);
 	        System.out.println("********************** Zookeeper Path: " + zkHBasePath);
@@ -104,6 +108,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        System.out.println("********************** Http Port: " + httpListenPort);
 	        System.out.println("********************** Http Uri: " + httpListenUri);
 	        System.out.println("********************** Map Api Key: " + mapAPIKey);
+	        System.out.println("********************** SAM Demo: " + mapAPIKey);
 	        
 	    	hbaseConfig.set("hbase.zookeeper.quorum", zkHost);
 			hbaseConfig.set("hbase.zookeeper.property.clientPort", zkPort);
@@ -149,8 +154,8 @@ public class TransactionMonitorUI extends HttpServlet{
 	        System.out.println("Checking if Initial: " + requestType);
 	        if(requestType.equalsIgnoreCase("initial") || requestType.equalsIgnoreCase("customerOverview")){   
 	        	//request.getRequestDispatcher("CustomerOverview.jsp").forward(request, response);
-	        	accountDetails = getAccountDetails(defaultAccountNumber );
-	        	transactionHistory = getTransactionHistory();
+	        	accountDetails = getAccountDetailsSQL(defaultAccountNumber );
+	        	transactionHistory = getTransactionHistorySQL();
 	        	request.setAttribute("cometdHost", cometdHost);
 	        	request.setAttribute("cometdPort", cometdListenPort);
 	        	request.setAttribute("mapAPIKey", mapAPIKey);
@@ -160,7 +165,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	        } else if(requestType.equalsIgnoreCase("customerDetails")){   
 	        	accountNumber = request.getParameter("accountNumber");
 	        	accountDetails = getAccountDetails(accountNumber);
-	        	transactionHistory = getTransactionHistory();
+	        	transactionHistory = getTransactionHistorySQL();
 				try {
 					merchantTypeShare = getMerchantTypeShare();
 				} catch (ClassNotFoundException e) {
@@ -181,9 +186,9 @@ public class TransactionMonitorUI extends HttpServlet{
 	        	fraudulentTransactionId = request.getParameter("fraudulentTransactionId");
 	        	accountDetails = getAccountDetails(accountNumber);
 	        	accountDetails.setIsAccountActive("false");
-	        	fraudulentTransaction = getTransaction(fraudulentTransactionId);
+	        	fraudulentTransaction = getTransactionSQL(fraudulentTransactionId);
 	        	fraudulentTransaction.setFraudulent("true");
-	        	transactionHistory = getTransactionHistory();
+	        	transactionHistory = getTransactionHistorySQL();
 	        	System.out.println("******** Sending Fraud Notification to Customer: " + fraudulentTransactionId);
 	        	sendFraudNotification(fraudulentTransaction);
 	        	updateAccountStatus(accountDetails);
@@ -204,10 +209,16 @@ public class TransactionMonitorUI extends HttpServlet{
 	        	request.getRequestDispatcher("CustomerDetails.jsp").forward(request, response);
 	        }
 	    }
-	    private Transaction getTransaction(String transactionId) {
+	    private Transaction getTransactionSQL(String transactionId) {
 	    	Transaction transaction = new Transaction();
 	    	List<Transaction> transactionList = new ArrayList<Transaction>();
-	    	String transactionQueryString = "SELECT PK, "
+	    	String transactionQueryString = null;
+	    	transactionQueryString = "SELECT TRANSACTIONID, ACCOUNTNUMBER, ACCOUNTTYPE, FRAUDULENT, "
+	    										+ "MERCHANTID, MERCHANTTYPE, AMOUNT, CURRENCY, LATITUDE, LONGITUDE, "
+	    										+ "TRANSACTIONTIMESTAMP, DISTANCEFROMHOME, DISTANCEFROMPREV"
+	    										+ "FROM TRANSACTIONHISTORY"
+	    										+ "WHERE TRANSACTIONID = '"+transactionId+"'";
+	    		transactionQueryString = "SELECT PK, "
 					+ "\"accountNumber\","
 					+ "\"accountType\","
 					+ "\"frauduent\","
@@ -229,22 +240,20 @@ public class TransactionMonitorUI extends HttpServlet{
 				rst = conn.createStatement().executeQuery(transactionQueryString);
 				while (rst.next()) {
 					transaction = new Transaction();
-					transaction.setAccountNumber(rst.getString("accountType"));
-					transaction.setAccountType(rst.getString("accountType"));
-					transaction.setMerchantId(rst.getString("merchantId"));
-					transaction.setMerchantType(rst.getString("merchantType"));
+					transaction.setAccountNumber(rst.getString("accountnumber"));
+					transaction.setAccountType(rst.getString("accounttype"));
+					transaction.setMerchantId(rst.getString("merchantid"));
+					transaction.setMerchantType(rst.getString("merchanttype"));
 					transaction.setFraudulent(rst.getString("frauduent"));
-					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setTransactionId(rst.getString("transactionid"));
 					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
 					transaction.setCurrency(rst.getString("currency"));
-					transaction.setIsCardPresent(rst.getString("isCardPresent"));
 					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
 					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
-					//transaction.setIpAddress(rst.getString("ipAddress"));
-					transaction.setTransactionId(rst.getString("transactionId"));
-					transaction.setTransactionTimeStamp(String.valueOf(rst.getLong("transactionTimeStamp")));
-					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
-					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
+					transaction.setTransactionId(rst.getString("transactionid"));
+					transaction.setTransactionTimeStamp(String.valueOf(rst.getLong("transactiontimestamp")));
+					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distancefromhome")));
+					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distancefromprev")));
 							
 					transactionList.add(transaction);
 				}
@@ -253,6 +262,125 @@ public class TransactionMonitorUI extends HttpServlet{
 			}
 	    	return transactionList.get(0);
 		}
+	    
+	    public List<Transaction> getTransactionHistorySQL() throws IOException{
+	    	Transaction transaction = null;
+	    	List<Transaction> transactionList = new ArrayList<Transaction>();
+	    	String transactionQueryString = null;
+	    	transactionQueryString = "SELECT TRANSACTIONID, ACCOUNTNUMBER, ACCOUNTTYPE, FRAUDULENT, "
+	    										+ "MERCHANTID, MERCHANTTYPE, AMOUNT, CURRENCY, LATITUDE, LONGITUDE, "
+	    										+ "TRANSACTIONTIMESTAMP, DISTANCEFROMHOME, DISTANCEFROMPREV"
+	    										+ "FROM TRANSACTIONHISTORY";
+	    	
+	    	/*String transactionQueryString = "SELECT "
+					+ "\"accountNumber\","
+					+ "\"accountType\","
+					+ "\"frauduent\","
+					+ "\"merchantId\","
+					+ "\"merchantType\","
+					+ "\"amount\","
+					+ "\"currency\","
+					+ "\"isCardPresent\","
+					+ "\"latitude\","
+					+ "\"longitude\","
+					+ "\"transactionId\","
+					+ "\"transactionTimeStamp\","
+					+ "\"distanceFromHome\","
+					+ "\"distanceFromPrev\" "
+					+ " FROM \"TransactionHistory\" ";*/
+	    	
+		    ResultSet rst;
+			try {
+				rst = conn.createStatement().executeQuery(transactionQueryString);
+				while (rst.next()) {
+					transaction = new Transaction();
+					transaction.setAccountNumber(rst.getString("accountType"));
+					transaction.setAccountType(rst.getString("accountType"));
+					transaction.setMerchantId(rst.getString("merchantId"));
+					transaction.setMerchantType(rst.getString("merchantType"));
+					transaction.setFraudulent(rst.getString("frauduent"));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
+					transaction.setCurrency(rst.getString("currency"));
+					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
+					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
+					transaction.setTransactionId(rst.getString("transactionId"));
+					transaction.setTransactionTimeStamp(rst.getString("transactionTimeStamp"));
+					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
+					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
+						
+					transactionList.add(transaction);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		    	
+		    return transactionList;
+	    }
+	    
+	    public List<AccountDetails> getAccountDetailsListSQL() throws IOException{
+	    	AccountDetails accountDetails = null;
+	    	List<AccountDetails> accountDetailsList = new ArrayList<AccountDetails>();
+	    	String queryString = null;
+	    	queryString = "SELECT ACCOUNTNUMBER, ACCOUNTTYPE, ISACTIVE, FIRSTNAME, LASTNAME, AGE, GENDER, "
+	    			+ "STREETADDRESS, CITY, STATE, ZIPCODE, LONGITUDE, LATITUDE FROM CUSTOMERACCOUNT";
+	    	ResultSet rst;
+			try {
+				rst = conn.createStatement().executeQuery(queryString);
+				while (rst.next()) {
+					accountDetails = new AccountDetails();
+					accountDetails.setAccountNumber(rst.getString("accountnumber"));
+					accountDetails.setAccountType(rst.getString("accounttype"));
+					accountDetails.setIsAccountActive(rst.getString("isactive"));	
+					accountDetails.setFirstName(rst.getString("firstname"));
+					accountDetails.setLastName(rst.getString("lastname"));
+					accountDetails.setAge(rst.getString("age"));
+					accountDetails.setGender(rst.getString("gender"));
+					accountDetails.setStreetAddress(rst.getString("streetaddress"));
+					accountDetails.setCity(rst.getString("city"));
+					accountDetails.setState(rst.getString("state"));
+					accountDetails.setZipCode(rst.getString("zipcode"));
+					accountDetails.setHomeLatitude(rst.getString("latitide"));
+					accountDetails.setHomeLongitude(rst.getString("longitude"));
+		    	}
+			    accountDetailsList.add(accountDetails);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+	    	
+	    	return accountDetailsList;
+	    }
+	    
+	    public AccountDetails getAccountDetailsSQL(String accountNumber) throws IOException{
+	    	AccountDetails accountDetails = null;
+	    	String queryString = null;
+	    	queryString = "SELECT ACCOUNTNUMBER, ACCOUNTTYPE, ISACTIVE, FIRSTNAME, LASTNAME, AGE, GENDER, "
+	    			+ "STREETADDRESS, CITY, STATE, ZIPCODE, LONGITUDE, LATITUDE FROM CUSTOMERACCOUNT WHERE ACCOUNTNUMBER = '"+accountNumber+"'";
+	    	ResultSet rst;
+			try {
+				rst = conn.createStatement().executeQuery(queryString);
+				while (rst.next()) {
+					accountDetails = new AccountDetails();
+					accountDetails.setAccountNumber(rst.getString("accountnumber"));
+					accountDetails.setAccountType(rst.getString("accounttype"));
+					accountDetails.setIsAccountActive(rst.getString("isactive"));	
+					accountDetails.setFirstName(rst.getString("firstname"));
+					accountDetails.setLastName(rst.getString("lastname"));
+					accountDetails.setAge(rst.getString("age"));
+					accountDetails.setGender(rst.getString("gender"));
+					accountDetails.setStreetAddress(rst.getString("streetaddress"));
+					accountDetails.setCity(rst.getString("city"));
+					accountDetails.setState(rst.getString("state"));
+					accountDetails.setZipCode(rst.getString("zipcode"));
+					accountDetails.setHomeLatitude(rst.getString("latitide"));
+					accountDetails.setHomeLongitude(rst.getString("longitude"));
+		    	}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+	    	
+	    	return accountDetails;
+	    }
 	    
 	    @SuppressWarnings("deprecation")
 		public List<AccountDetails> getAccountDetailsList() throws IOException{
@@ -407,59 +535,11 @@ public class TransactionMonitorUI extends HttpServlet{
 			}
 	    	return accountDetails;
 	    }
-	    
-		public List<Transaction> getTransactionHistory() throws IOException{
-	    	Transaction transaction = null;
-	    	List<Transaction> transactionList = new ArrayList<Transaction>();
-	    	String transactionQueryString = "SELECT "
-					+ "\"accountNumber\","
-					+ "\"accountType\","
-					+ "\"frauduent\","
-					+ "\"merchantId\","
-					+ "\"merchantType\","
-					+ "\"amount\","
-					+ "\"currency\","
-					+ "\"isCardPresent\","
-					+ "\"latitude\","
-					+ "\"longitude\","
-					+ "\"transactionId\","
-					+ "\"transactionTimeStamp\","
-					+ "\"distanceFromHome\","
-					+ "\"distanceFromPrev\" "
-					+ " FROM \"TransactionHistory\" ";
-		    ResultSet rst;
-			try {
-				rst = conn.createStatement().executeQuery(transactionQueryString);
-				while (rst.next()) {
-					transaction = new Transaction();
-					transaction.setAccountNumber(rst.getString("accountType"));
-					transaction.setAccountType(rst.getString("accountType"));
-					transaction.setMerchantId(rst.getString("merchantId"));
-					transaction.setMerchantType(rst.getString("merchantType"));
-					transaction.setFraudulent(rst.getString("frauduent"));
-					transaction.setTransactionId(rst.getString("transactionId"));
-					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
-					transaction.setCurrency(rst.getString("currency"));
-					transaction.setIsCardPresent(rst.getString("isCardPresent"));
-					transaction.setLatitude(String.valueOf(rst.getDouble("latitude")));
-					transaction.setLongitude(String.valueOf(rst.getDouble("longitude")));
-					//transaction.setIpAddress(rst.getString("ipAddress"));
-					transaction.setTransactionId(rst.getString("transactionId"));
-					transaction.setTransactionTimeStamp(rst.getString("transactionTimeStamp"));
-					transaction.setDistanceFromHome(String.valueOf(rst.getDouble("distanceFromHome")));
-					transaction.setDistanceFromPrev(String.valueOf(rst.getDouble("distanceFromPrev")));
-						
-					transactionList.add(transaction);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		    	
-		    return transactionList;
-	    }
+		
 	    public Map<String, Integer> getMerchantTypeShare() throws ClassNotFoundException, SQLException{
 	    	Map<String, Integer> merchantTypeShare = new HashMap<String, Integer>();
-	        ResultSet rst = conn.createStatement().executeQuery("SELECT \"merchantType\", COUNT(\"merchantType\") as \"Count\" FROM \"TransactionHistory\" WHERE \"frauduent\" = 'false' GROUP BY \"merchantType\"");
+	        ResultSet rst = conn.createStatement().executeQuery("SELECT MERCHANTTYPE COUNT(MERCHANTTYPE) AS MERCHANTCOUNT "
+	        		+ "FROM TRANSACTIONHISTORY WHERE FRAUDULENT = 'false' GROUP BY MERCHANTTYPE");
 	        while (rst.next()) {
 	        	merchantTypeShare.put(rst.getString(1), rst.getInt(2));
 	        	System.out.println(rst.getString(1) + " " + rst.getString(2));
@@ -468,6 +548,17 @@ public class TransactionMonitorUI extends HttpServlet{
 	        return merchantTypeShare;
 	    }
 	    
+	    public void updateTransactionStatusSQL(Transaction transaction){
+	    	String queryString = null;
+	    	queryString = "UPSERT INTO TRANSACTIONHISTORY (TRANSACTIONID, FRAUDULENT) "
+	    			+ "VALUES ('"+transaction.getTransactionId()+"','"+transaction.getFraudulent()+"')";
+			try {
+				conn.createStatement().executeUpdate(queryString);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	    
 	    public void updateTransactionStatus(Transaction transaction){
 			Put transactionToUpdate = new Put(Bytes.toBytes(transaction.getTransactionId()));
 			transactionToUpdate.add(Bytes.toBytes("Transactions"), Bytes.toBytes("frauduent"), Bytes.toBytes(transaction.getFraudulent()));
@@ -475,6 +566,17 @@ public class TransactionMonitorUI extends HttpServlet{
 			try {
 				transactionHistoryTable.put(transactionToUpdate);
 			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	    
+	    public void updateAccountStatusSQL(AccountDetails account){
+	    	String queryString = null;
+	    	queryString = "UPSERT INTO CUSTOMERACCOUNT (ACCOUNTNUMBER, ISACTIVE) "
+	    			+ "VALUES ('"+account.getAccountNumber()+"','"+account.getIsAccountActive()+"')";
+			try {
+				conn.createStatement().executeUpdate(queryString);
+			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
