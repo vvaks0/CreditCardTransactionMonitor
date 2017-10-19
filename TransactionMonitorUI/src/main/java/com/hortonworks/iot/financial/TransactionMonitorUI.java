@@ -269,7 +269,7 @@ public class TransactionMonitorUI extends HttpServlet{
 	    	String transactionQueryString = null;
 	    	transactionQueryString = "SELECT TRANSACTIONID, ACCOUNTNUMBER, ACCOUNTTYPE, FRAUDULENT, "
 	    										+ "MERCHANTID, MERCHANTTYPE, AMOUNT, CURRENCY, LATITUDE, LONGITUDE, "
-	    										+ "TRANSACTIONTIMESTAMP, DISTANCEFROMHOME, DISTANCEFROMPREV"
+	    										+ "TRANSACTIONTIMESTAMP, DISTANCEFROMHOME, DISTANCEFROMPREV "
 	    										+ "FROM TRANSACTIONHISTORY";
 	    	
 	    	/*String transactionQueryString = "SELECT "
