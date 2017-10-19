@@ -372,7 +372,7 @@ public class TransactionMonitorUI extends HttpServlet{
 					accountDetails.setCity(rst.getString("city"));
 					accountDetails.setState(rst.getString("state"));
 					accountDetails.setZipCode(rst.getString("zipcode"));
-					accountDetails.setHomeLatitude(rst.getString("latitide"));
+					accountDetails.setHomeLatitude(rst.getString("latitude"));
 					accountDetails.setHomeLongitude(rst.getString("longitude"));
 		    	}
 			} catch (SQLException e) {
