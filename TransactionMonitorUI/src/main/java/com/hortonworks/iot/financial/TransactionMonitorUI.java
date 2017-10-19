@@ -298,7 +298,7 @@ public class TransactionMonitorUI extends HttpServlet{
 					transaction.setAccountType(rst.getString("accountType"));
 					transaction.setMerchantId(rst.getString("merchantId"));
 					transaction.setMerchantType(rst.getString("merchantType"));
-					transaction.setFraudulent(rst.getString("frauduent"));
+					transaction.setFraudulent(rst.getString("fraudulent"));
 					transaction.setTransactionId(rst.getString("transactionId"));
 					transaction.setAmount(String.valueOf(rst.getDouble("amount")));
 					transaction.setCurrency(rst.getString("currency"));
