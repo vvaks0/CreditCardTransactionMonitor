@@ -1,0 +1,23 @@
+<PMML xmlns="http://www.dmg.org/PMML-4_1" version="4.1">
+    <Header copyright="DMG.org"/>
+    <DataDictionary numberOfFields="4">
+        <DataField name="amountNSD" optype="continuous" dataType="double"/>
+        <DataField name="timeNSD" optype="continuous" dataType="double"/>
+        <DataField name="distanceNSD" optype="continuous" dataType="double"/>
+        <DataField name="probability" optype="categorical" dataType="double"/>
+    </DataDictionary>
+    <RegressionModel modelName="linear SVM" functionName="classification" normalizationMethod="none" targetFieldName="probability">
+        <MiningSchema>
+            <MiningField name="amountNSD" usageType="active"/>
+            <MiningField name="timeNSD" usageType="active"/>
+            <MiningField name="distanceNSD" usageType="active"/>
+            <MiningField name="probability" usageType="predicted"/>
+        </MiningSchema>
+        <RegressionTable intercept="-1.7535004133947043" targetCategory="1">
+            <NumericPredictor name="amountNSD" coefficient="0.17751022275925205"/>
+            <NumericPredictor name="timeNSD" coefficient="0.060917670306210064"/>
+            <NumericPredictor name="distanceNSD" coefficient="0.10924794398547727"/>
+        </RegressionTable>
+        <RegressionTable intercept="0.0" targetCategory="0"/>
+    </RegressionModel>
+</PMML>
