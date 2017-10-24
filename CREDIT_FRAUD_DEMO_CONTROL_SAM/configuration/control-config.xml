@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+ 
+<configuration>
+
+  <property require-input="true">
+    <name>democontrol.install_dir</name>
+    <value>/root</value>
+    <description>Directory under which demo control utility will be installed</description>
+  </property> 
+
+  <property require-input="true">
+    <name>democontrol.nifi_host_ip</name>
+    <value></value>
+    <description>IP address of host where Nifi is listening</description>
+  </property>
+  
+  <property require-input="true">
+    <name>democontrol.install.dir</name>
+    <value>/root</value>
+    <description>Directory under which demo control utility will be installed</description>
+  </property> 
+  
+  <property require-input="true">
+    <name>democontrol.sam.extentions.git.url</name>
+    <value>https://github.com/vakshorton/sam-custom-extensions.git</value>
+    <description>Online location to download SAM custom extentions</description>
+  </property>
+  
+  <property require-input="true">
+    <name>democontrol.download_url</name>
+    <value>https://github.com/vakshorton/CreditCardTransactionMonitor.git</value>
+    <description>Online location to download Credit Fraud source package</description>
+  </property> 
+  
+  <property require-input="true">
+    <name>democontrol.google.api.key</name>
+    <value></value>
+    <property-type>PASSWORD</property-type>
+    <description>Google API Key used to enable Map in Device Manager UI</description>
+        <value-attributes>
+		<type>password</type>
+    </value-attributes>
+  </property>    
+</configuration>

@@ -1,0 +1,24 @@
+{
+  "name": "default",
+  "description": "default quick links configuration",
+  "configuration": {
+    "protocol":
+    {
+      "type":"http",
+      "checks":[]
+    },
+
+    "links": [
+      {
+        "name": "transaction_monitor_ui",
+        "label": "Transaction Monitor UI",
+        "requires_user_name": "false",
+        "component_name": "NIFI_MASTER",
+        "url":"%@://%@:%@/TransactionMonitorUI/CustomerOverview",
+        "port":{
+          "http_default_port": "8090"
+        }
+      }
+    ]
+  }
+}
