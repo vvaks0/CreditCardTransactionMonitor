@@ -547,7 +547,7 @@ PAYLOAD="{\"name\":\"original_transaction\",\"type\":\"avro\",\"schemaGroup\":\"
 
 echo $PAYLOAD
 	
-	curl -u admin:admin -i -H "content-type: application/json" -d "$PAYLOAD" -X POST http://$AMBARI_HOST:7788/api/v1/schemaregistry/schemas/truck_events_log/versions
+	curl -u admin:admin -i -H "content-type: application/json" -d "$PAYLOAD" -X POST http://$AMBARI_HOST:7788/api/v1/schemaregistry/schemas/original_transaction/versions
 	
 	PAYLOAD="{\"name\":\"incoming_transaction\",\"type\":\"avro\",\"schemaGroup\":\"transaction\",\"description\":\"incoming transaction\",\"evolve\":true,\"compatibility\":\"BACKWARD\"}"
 	
@@ -557,7 +557,7 @@ PAYLOAD="{\"schemaText\":\"{\\\"type\\\":\\\"record\\\",\\\"name\\\":\\\"origina
 
 echo $PAYLOAD
 
-	curl -u admin:admin -i -H "content-type: application/json" -d "$PAYLOAD" -X POST http://$AMBARI_HOST:7788/api/v1/schemaregistry/schemas/truck_speed_events_log/versions
+	curl -u admin:admin -i -H "content-type: application/json" -d "$PAYLOAD" -X POST http://$AMBARI_HOST:7788/api/v1/schemaregistry/schemas/incoming_transaction/versions
 	
 }
 
@@ -567,22 +567,23 @@ deployContainers (){
 	#mvn clean package
 	#mvn docker:build
 	
-	cd APP_DIR
+	cd $APP_DIR
 	mvn clean package
 	#mvn docker:build
 	export HTTP_HOST=$NIFI_HOST
   	export TOMCAT_PORT=8098
+  	export COMETD_PORT=8099
   	export MAP_API_KEY=$GOOGLE_API_KEY
 
 	docker pull vvaks/cometd
 	docker run -d -p 8099:8091 vvaks/cometd
 	#docker run -d -e MAP_API_KEY=$GOOGLE_API_KEY -e ZK_HOST=$ZK_HOST -e COMETD_HOST=$COMETD_HOST -e COMETD_PORT=8099 -p 8098:8090 vvaks/mapui
-	java -jar  target/TransactionMonitorUI-jar-with-dependencies.jar
+	nohup java -jar  target/TransactionMonitorUI-jar-with-dependencies.jar > TransactionMonitorUI.log &
 }
 
 createHbaseTables () {
 	#Create Hbase Tables
-	echo "create 'history','0'" | hbase shell
+	echo "create 'HISTORY','0'" | hbase shell
 }
 
 createPhoenixTables () {

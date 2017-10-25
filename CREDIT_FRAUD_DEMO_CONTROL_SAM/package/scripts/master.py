@@ -6,12 +6,12 @@ class DemoControl(Script):
   def install(self, env):
     self.configure(env)
     import params
-  
-    if not os.path.exists(params.install_dir):  
+    
+    if not os.path.exists(params.install_dir):
         os.makedirs(params.install_dir)
     os.chdir(params.install_dir)
-    Execute('git clone ' + params.device_manager_download_url)
-    Execute('git clone ' + params.sam_extensions_download_url)
+    Execute('git clone ' + params.download_url)
+    Execute('git clone ' + params.sam_extentions_download_url)
     if not os.path.exists(params.install_dir+'/CreditCardTransactionMonitor'):
         Execute('git clone ' + params.download_url)
     Execute(params.install_dir + '/CloudBreakArtifacts/recipes/credit-fraud-sam-install.sh ' + params.install_dir + ' '+ params.google_api_key)
@@ -24,7 +24,7 @@ class DemoControl(Script):
     self.configure(env)
     import params
     Execute('echo Start Simulation')
-    Execute('nohup java -jar '+params.install_dir+'/CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar Customer 1000 Simulation '+params.nifi_host_ip+' > '+params.install_dir+'/CreditCardTransactionSim.log 2>&1 & echo $! > /var/run/CreditCardTransactionSim.pid')
+    Execute('nohup java -jar '+params.install_dir+'/CreditCardTransactionSimulator-0.0.1-SNAPSHOT-jar-with-dependencies.jar Customer 1000 Simulation '+params.nifi_host+' > '+params.install_dir+'/CreditCardTransactionSim.log 2>&1 & echo $! > /var/run/CreditCardTransactionSim.pid')
     
   def stop(self, env):
     self.configure(env)

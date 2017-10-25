@@ -8,18 +8,12 @@
     <value>/root</value>
     <description>Directory under which demo control utility will be installed</description>
   </property> 
-
+<!--
   <property require-input="true">
     <name>democontrol.nifi_host_ip</name>
     <value></value>
     <description>IP address of host where Nifi is listening</description>
-  </property>
-  
-  <property require-input="true">
-    <name>democontrol.install.dir</name>
-    <value>/root</value>
-    <description>Directory under which demo control utility will be installed</description>
-  </property> 
+  </property> -->
   
   <property require-input="true">
     <name>democontrol.sam.extentions.git.url</name>
