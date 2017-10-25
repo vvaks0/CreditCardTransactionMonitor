@@ -16,7 +16,7 @@
         "component_name": "NIFI_MASTER",
         "url":"%@://%@:%@/TransactionMonitorUI/CustomerOverview",
         "port":{
-          "http_default_port": "8090"
+          "http_default_port": "8098"
         }
       }
     ]
