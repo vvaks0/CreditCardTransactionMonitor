@@ -59,7 +59,9 @@ public class CreditCardTransactionSimulator {
             deviceNetworkInfoMap.put("ipaddress", ipaddress);
             deviceNetworkInfoMap.put("hostname", hostname);
             System.out.println("Current IP address : " + ipaddress);
-            System.out.println("Current Hostname : " + hostname);         
+            System.out.println("Current Hostname : " + hostname);
+            System.out.println("Target IP address : " + targetIP);
+            System.out.println("Target Port : " + targetPort);  
         } catch (UnknownHostException e) {
  
             e.printStackTrace();
