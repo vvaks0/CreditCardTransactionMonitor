@@ -122,6 +122,8 @@ public class CreditCardTransactionSimulator {
 			Map networkInfo = getNetworkInfo(customerId, simType);
 			ipaddress =  (String)networkInfo.get("ipaddress");
 			port =  (String)networkInfo.get("port");
+			System.out.println("Target IP address : " + targetIP);
+            System.out.println("Target Port : " + targetPort);  
 			TransactionSimulator tech = new TransactionSimulator(customerId, targetIP, targetPort, ipaddress, port, mode);
             customerThread = new Thread(tech);
             customerThread.setName("Customer: " + customerId);
