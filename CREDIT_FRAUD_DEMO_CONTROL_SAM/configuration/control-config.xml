@@ -16,6 +16,12 @@
   </property> -->
   
   <property require-input="true">
+    <name>democontrol.nifi.http.listen.port</name>
+    <value>8085</value>
+    <description>Port where Nifi is listening on HTTP for simulated transactions</description>
+  </property>
+  
+  <property require-input="true">
     <name>democontrol.sam.extentions.git.url</name>
     <value>https://github.com/vakshorton/sam-custom-extensions.git</value>
     <description>Online location to download SAM custom extentions</description>

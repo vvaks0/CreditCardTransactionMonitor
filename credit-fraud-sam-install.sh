@@ -633,6 +633,8 @@ exec 2>&1
 export ROOT_PATH=~
 echo "*********************************ROOT PATH IS: $ROOT_PATH"
 
+export GOOGLE_API_KEY=$2
+
 export AMBARI_HOST=$(hostname -f)
 echo "*********************************AMABRI HOST IS: $AMBARI_HOST"
 

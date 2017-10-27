@@ -12,4 +12,5 @@ google_api_key = config['configurations']['control-config']['democontrol.google.
 
 #nifi_host_ip = config['configurations']['control-config']['democontrol.nifi_host_ip']
 nifi_host = str(config['clusterHostInfo']['nifi_master_hosts'][0])
+params.nifi_http_listen_port = config['configurations']['control-config']['democontrol.nifi.http.listen.port']
 nifi_port = '9090'
